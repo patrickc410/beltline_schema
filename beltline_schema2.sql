@@ -49,7 +49,7 @@ CREATE TABLE site (
     name varchar(40) PRIMARY KEY,
     address varchar(40),
     zipcode decimal(9,0),
-    openeveryday char(1), -- enums?
+    openeveryday ENUM('Yes','No'),
     managerID decimal(10,0),
     CONSTRAINT site_fk1 FOREIGN KEY (managerID) REFERENCES employee (employeeID)
 );
