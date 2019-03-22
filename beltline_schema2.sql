@@ -138,11 +138,10 @@ DROP TABLE IF EXISTS transit_connections;
 CREATE TABLE transit_connections (
     site_name varchar(40),
     transit_type varchar(20),
-    connect_route varchar(20),
+    route varchar(20),
     PRIMARY KEY (site_name, transit_type, route),
     CONSTRAINT transit_connections_fk1 FOREIGN KEY (site_name) REFERENCES site (name),
-    CONSTRAINT transit_connections_fk2 FOREIGN KEY (transit_type) REFERENCES transit (type),
-    CONSTRAINT transit_connections_fk3 FOREIGN KEY (connect_route) REFERENCES transit (route)
+    CONSTRAINT transit_connections_fk2 FOREIGN KEY (transit_type, route) REFERENCES transit (type, route)
 );
 
 
