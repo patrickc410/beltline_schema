@@ -125,8 +125,7 @@ CREATE TABLE visit_event (
     visit_date char(10),
     PRIMARY KEY (username, event_name, start_date, site_name, visit_date),
     CONSTRAINT visit_event_fk1 FOREIGN KEY (username) REFERENCES user (username),
-    CONSTRAINT visit_event_fk2 FOREIGN KEY (event_name, start_date) REFERENCES event (name, start_date),
-    CONSTRAINT visit_event_fk3 FOREIGN KEY (site_name) REFERENCES event (site_name)
+    CONSTRAINT visit_event_fk2 FOREIGN KEY (event_name, start_date, site_name) REFERENCES event (name, start_date, site_name)
 );
 
 
@@ -156,12 +155,6 @@ CREATE TABLE event_staff_assignments (
     start_date char(10),
     site_name varchar(40),
     PRIMARY KEY (employeeID, event_name, start_date, site_name),
-    CONSTRAINT visit_event_fk1 FOREIGN KEY (employeeID) REFERENCES employee (employeeID),
-    CONSTRAINT visit_event_fk2 FOREIGN KEY (event_name) REFERENCES event (name),
-    CONSTRAINT visit_event_fk3 FOREIGN KEY (start_date) REFERENCES event (start_date),
-    CONSTRAINT visit_event_fk4 FOREIGN KEY (site_name) REFERENCES event (site_name)
+    CONSTRAINT event_staff_assignments_fk1 FOREIGN KEY (employeeID) REFERENCES employee (employeeID),
+    CONSTRAINT event_staff_assignments_fk2 FOREIGN KEY (event_name, start_date, site_name) REFERENCES event (name, start_date, site_name)
 );
-
-
-
-
