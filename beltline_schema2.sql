@@ -17,11 +17,11 @@ CREATE TABLE user (
 
 
 INSERT INTO user VALUES
-    ('user1', 'Visitor', 'Patrick', 'Crawford', 'Approved', 'password1'),
-    ('user2', 'Employee', 'Madison', 'Smith', 'Declined', 'password2'),
-    ('user3', 'Both', 'Lauren', 'Johnson', 'Pending', 'password3'),
-    ('user4', 'Visitor', 'Katie', 'Neil', 'Approved', 'password4'),
-    ('user5', 'Both', 'Abbey', 'Nannis', 'Declined', 'password5');
+    ('user1', 'Visitor', 'Patrick', 'Crawford', 'Declined', 'password1'),
+    ('user2', 'Employee', 'Madison', 'Smith', 'Approved', 'password2'),
+    ('user3', 'Both', 'Lauren', 'Johnson', 'Approved', 'password3'),
+    ('user4', 'Visitor', 'Katie', 'Neil', 'Pending', 'password4'),
+    ('user5', 'Both', 'Abbey', 'Nannis', 'Approved', 'password5');
 
 
 
@@ -53,6 +53,7 @@ INSERT INTO email VALUES
     ('user5', 'user5_email5_@icloud.com');
 
 
+
 DROP TABLE IF EXISTS employee;
 CREATE TABLE employee (
     employeeID decimal(10,0) PRIMARY KEY,
@@ -63,9 +64,14 @@ CREATE TABLE employee (
     state varchar(15),
     zipcode int(9),
     employee_type ENUM('Administrator','Staff','Manager'),
-    CHECK (username in (select username from user where user_type = 'Employee' or user_type = 'Both')),
     CONSTRAINT employee_fk1 FOREIGN KEY (username) REFERENCES user(username)
 );
+
+
+INSERT INTO employee VALUES
+    (1, 'user2', 6789998212, '123 Address Lane', 'Atlanta', 'GA', 30030, 'Staff'),
+    (2, 'user3', 4040001111, '456 Address Street', 'Dallas', 'TX', 300309212, 'Manager'),
+    (3, 'user4', 7701112222, '789 Address Way', 'New York City', 'NY', 300309212, 'Administrator');
 
 
 
@@ -79,6 +85,10 @@ CREATE TABLE site (
     CONSTRAINT site_fk1 FOREIGN KEY (managerID) REFERENCES employee (employeeID)
 );
 
+INSERT INTO site VALUES
+    ('site1', '111 Site1 Way', 300309999, 'Yes', 0000000002),
+    ('site2', '222 Site2 Way', 300309999, 'No', 0000000002),
+    ('site3', '333 Site3 Way', 300309999, 'Yes', 0000000002);
 
 
 
@@ -90,6 +100,8 @@ CREATE TABLE transit (
     price decimal(3,2),
     PRIMARY KEY (type, route)
 );
+
+
 
 
 
