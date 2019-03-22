@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS user;
 -- SET character_set_client = utf8mb4 ; -- what is this?
 CREATE TABLE user (
     username varchar(20) PRIMARY KEY,
+    user_type ENUM('Visitor','Employee','Both'),
     fname varchar(20),
     lname varchar(20),
     status ENUM('Administrator','Staff','Manager'),
