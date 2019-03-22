@@ -12,7 +12,7 @@ CREATE TABLE user (
     username varchar(20) PRIMARY KEY,
     fname varchar(20),
     lname varchar(20),
-    status varchar(10), -- is there a way to make enums like in python for this?
+    status ENUM('Administrator','Staff','Manager'),
     password varchar(20)
 );
 
