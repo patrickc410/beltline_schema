@@ -11,7 +11,7 @@ CREATE TABLE user (
     user_type ENUM('Visitor','Employee','Both'),
     fname varchar(20),
     lname varchar(20),
-    status ENUM('Approved', 'Declined', 'Pending') SET DEFAULT 'Pending',
+    status ENUM('Approved', 'Declined', 'Pending') DEFAULT 'Pending',
     password varchar(20)
 );
 
