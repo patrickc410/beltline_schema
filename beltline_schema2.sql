@@ -11,7 +11,7 @@ CREATE TABLE user (
     user_type ENUM('Visitor','Employee','Both'),
     fname varchar(20),
     lname varchar(20),
-    status ENUM('Approved', 'Declined', 'Pending'),
+    status ENUM('Approved', 'Declined', 'Pending') SET DEFAULT 'Pending',
     password varchar(20)
 );
 
@@ -31,7 +31,7 @@ CREATE TABLE email (
     username varchar(20),
     email varchar(100),
     PRIMARY KEY (username, email),
-    CONSTRAINT email_fk1 FOREIGN KEY (username) REFERENCES user(username)
+    CONSTRAINT email_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 
