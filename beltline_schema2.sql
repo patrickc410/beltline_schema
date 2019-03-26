@@ -58,7 +58,7 @@ DROP TABLE IF EXISTS employee;
 CREATE TABLE employee (
     employeeID decimal(10,0) PRIMARY KEY,
     username varchar(20) UNIQUE KEY,
-    phone decimal(10,0),
+    phone decimal(10,0) UNIQUE KEY,
     address varchar(40),
     city varchar(20),
     state varchar(15),
