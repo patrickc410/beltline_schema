@@ -8,11 +8,11 @@ USE beltline;
 DROP TABLE IF EXISTS user;
 CREATE TABLE user (
     username varchar(20) PRIMARY KEY,
-    user_type ENUM('Visitor','Employee','Both'),
-    fname varchar(20),
-    lname varchar(20),
+    user_type ENUM('Visitor','Employee','Both') NOT NULL,
+    fname varchar(20) NOT NULL,
+    lname varchar(20) NOT NULL,
     status ENUM('Approved', 'Declined', 'Pending') DEFAULT 'Pending',
-    password varchar(20)
+    password varchar(20) NOT NULL
 );
 
 
@@ -56,7 +56,7 @@ INSERT INTO email VALUES
 
 DROP TABLE IF EXISTS employee;
 CREATE TABLE employee (
-    employeeID decimal(10,0) PRIMARY KEY,
+    employeeID int(9) PRIMARY KEY,
     username varchar(20) UNIQUE KEY,
     phone decimal(10,0) UNIQUE KEY,
     address varchar(40),
@@ -71,7 +71,7 @@ CREATE TABLE employee (
 INSERT INTO employee VALUES
     (1, 'user2', 6789998212, '123 Address Lane', 'Atlanta', 'GA', 30030, 'Staff'),
     (2, 'user3', 4040001111, '456 Address Street', 'Dallas', 'TX', 300309212, 'Manager'),
-    (3, 'user4', 7701112222, '789 Address Way', 'New York City', 'NY', 300309212, 'Administrator');
+    (3, 'user4', 7701112222, 'New York City', 'NY', 300309212, 'Administrator');
 
 
 
@@ -79,9 +79,9 @@ DROP TABLE IF EXISTS site;
 CREATE TABLE site (
     name varchar(40) PRIMARY KEY,
     address varchar(40),
-    zipcode decimal(9,0),
-    openeveryday ENUM('Yes','No'),
-    managerID decimal(10,0),
+    zipcode int(5),
+    openeveryday ENUM('Yes','No') NOT NULL,
+    managerID int(9) NOT NULL,
     CONSTRAINT site_fk1 FOREIGN KEY (managerID) REFERENCES employee (employeeID)
 );
 
