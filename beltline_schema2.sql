@@ -64,7 +64,7 @@ CREATE TABLE employee (
     state varchar(15),
     zipcode int(9),
     employee_type ENUM('Administrator','Staff','Manager'),
-    CONSTRAINT employee_fk1 FOREIGN KEY (username) REFERENCES user(username)
+    CONSTRAINT employee_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 
