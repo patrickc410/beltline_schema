@@ -155,8 +155,8 @@ CREATE TABLE visit_event (
     site_name varchar(40),
     visit_date char(10),
     PRIMARY KEY (username, event_name, start_date, site_name, visit_date),
-    CONSTRAINT visit_event_fk1 FOREIGN KEY (username) REFERENCES user (username),
-    CONSTRAINT visit_event_fk2 FOREIGN KEY (event_name, start_date, site_name) REFERENCES event (name, start_date, site_name)
+    CONSTRAINT visit_event_fk1 FOREIGN KEY (username) REFERENCES user (username) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT visit_event_fk2 FOREIGN KEY (event_name, start_date, site_name) REFERENCES event (name, start_date, site_name) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 
