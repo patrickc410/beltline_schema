@@ -8,7 +8,7 @@ USE beltline;
 DROP TABLE IF EXISTS user;
 CREATE TABLE user (
     username varchar(20) PRIMARY KEY,
-    user_type ENUM('Visitor','Employee','Both') NOT NULL,
+    user_type ENUM('User','Visitor','Employee') NOT NULL,
     fname varchar(20) NOT NULL,
     lname varchar(20) NOT NULL,
     status ENUM('Approved', 'Declined', 'Pending') DEFAULT 'Pending',
@@ -67,7 +67,11 @@ CREATE TABLE employee (
     CONSTRAINT employee_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-
+CREATE TABLE visitor_list (
+    username varchar(20) PRIMARY KEY,
+    CONSTRAINT visitor_list_fk1 FOREIGN KEY username REFERENCES user(username)   
+);
+-- change visit site and visit event table
 INSERT INTO employee VALUES
     (1, 'user2', 6789998212, '123 Address Lane', 'Atlanta', 'GA', 30030, 'Staff'),
     (2, 'user3', 4040001111, '456 Address Street', 'Dallas', 'TX', 300309212, 'Manager'),
