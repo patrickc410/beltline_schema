@@ -139,8 +139,8 @@ CREATE TABLE visit_site (
     site_name varchar(40),
     visit_date date,
     PRIMARY KEY (username, site_name, visit_date),
-    CONSTRAINT visit_site_fk1 FOREIGN KEY (username) REFERENCES user (username),
-    CONSTRAINT visit_site_fk2 FOREIGN KEY (site_name) REFERENCES site (name)
+    CONSTRAINT visit_site_fk1 FOREIGN KEY (username) REFERENCES user (username) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT visit_site_fk2 FOREIGN KEY (site_name) REFERENCES site (name) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 
