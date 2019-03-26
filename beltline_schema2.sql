@@ -169,8 +169,8 @@ CREATE TABLE transit_connections (
     transit_type varchar(20),
     route varchar(20),
     PRIMARY KEY (site_name, transit_type, route),
-    CONSTRAINT transit_connections_fk1 FOREIGN KEY (site_name) REFERENCES site (name),
-    CONSTRAINT transit_connections_fk2 FOREIGN KEY (transit_type, route) REFERENCES transit (type, route)
+    CONSTRAINT transit_connections_fk1 FOREIGN KEY (site_name) REFERENCES site (name) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT transit_connections_fk2 FOREIGN KEY (transit_type, route) REFERENCES transit (type, route) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 
@@ -184,6 +184,6 @@ CREATE TABLE event_staff_assignments (
     start_date date,
     site_name varchar(40),
     PRIMARY KEY (employeeID, event_name, start_date, site_name),
-    CONSTRAINT event_staff_assignments_fk1 FOREIGN KEY (employeeID) REFERENCES employee (employeeID),
-    CONSTRAINT event_staff_assignments_fk2 FOREIGN KEY (event_name, start_date, site_name) REFERENCES event (name, start_date, site_name)
+    CONSTRAINT event_staff_assignments_fk1 FOREIGN KEY (employeeID) REFERENCES employee (employeeID) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT event_staff_assignments_fk2 FOREIGN KEY (event_name, start_date, site_name) REFERENCES event (name, start_date, site_name) ON UPDATE CASCADE ON DELETE CASCADE
 );
