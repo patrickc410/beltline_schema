@@ -29,7 +29,7 @@ INSERT INTO user VALUES
 DROP TABLE IF EXISTS email;
 CREATE TABLE email (
     username varchar(20),
-    email varchar(100),
+    email varchar(100) NOT NULL,
     PRIMARY KEY (username, email),
     CONSTRAINT email_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
 );
@@ -56,22 +56,26 @@ INSERT INTO email VALUES
 
 DROP TABLE IF EXISTS employee;
 CREATE TABLE employee (
-    employeeID int(9) PRIMARY KEY AUTO_INCREMENT,
-    username varchar(20) UNIQUE KEY,
-    phone decimal(10,0) UNIQUE KEY,
-    address varchar(40),
-    city varchar(20),
-    state varchar(15),
-    zipcode int(9),
-    employee_type ENUM('Administrator','Staff','Manager'),
+    employeeID int AUTO_INCREMENT = 100000000,
+    username varchar(20) UNIQUE KEY NOT NULL,
+    phone decimal(10,0) UNIQUE KEY NOT NULL,
+    address varchar(40) NOT NULL,
+    city varchar(20) NOT NULL,
+    state varchar(15) NOT NULL,
+    zipcode int(9) NOT NULL,
+    employee_type ENUM('Administrator','Staff','Manager') NOT NULL,
+    PRIMARY KEY(employeeID)
     CONSTRAINT employee_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+
 CREATE TABLE visitor_list (
     username varchar(20) PRIMARY KEY,
-    CONSTRAINT visitor_list_fk1 FOREIGN KEY (username) REFERENCES user(username)   
+    CONSTRAINT visitor_list_fk1 FOREIGN KEY (username) REFERENCES user(username)
 );
--- change visit site and visit event table
+-- we created the visitor_list table to hold all of the visitor ands and employee-visitors,
+-- so when a visitor is deleted or employee-visitor returns to a plain employee status,
+-- they will be deleted from this table, and consquently, all of their associated history will be deleted, too
 INSERT INTO employee(username,phone,address,city,state,zipcode,employee_type) VALUES
     ('user2', 6789998212, '123 Address Lane', 'Atlanta', 'GA', 30030, 'Staff'),
     ('user3', 4040001111, '456 Address Street', 'Dallas', 'TX', 300309212, 'Manager'),
@@ -83,7 +87,7 @@ DROP TABLE IF EXISTS site;
 CREATE TABLE site (
     name varchar(40) PRIMARY KEY,
     address varchar(40),
-    zipcode int(5),
+    zipcode int(5) NOT NULL,
     openeveryday ENUM('Yes','No') NOT NULL,
     managerID int(9) NOT NULL,
     CONSTRAINT site_fk1 FOREIGN KEY (managerID) REFERENCES employee (employeeID) ON UPDATE CASCADE ON DELETE RESTRICT
@@ -99,51 +103,57 @@ INSERT INTO site VALUES
 
 DROP TABLE IF EXISTS transit;
 CREATE TABLE transit (
-    type varchar(20),
-    route varchar(20),
-    price decimal(3,2),
+    type ENUM('MARTA','Bus','Bike') NOT NULL,
+    route varchar(20) NOT NULL,
+    price decimal(3,2) NOT NULL,
+    connected_sites int(2) NOT NULL,
     PRIMARY KEY (type, route)
 );
-
-
+INSERT INTO transit VALUES
+    ('MARTA',816, 4.30,4);
 
 
 
 DROP TABLE IF EXISTS event;
 CREATE TABLE event (
-    name varchar(40),
-    start_date date,
-    site_name varchar(40),
-    description varchar(100),
-    min_staff_req int(4),
-    capacity int(5),
-    price decimal(3,2),
-    end_date date,
+    name varchar(40) NOT NULL,
+    start_date date NOT NULL,
+    site_name varchar(40) NOT NULL,
+    description varchar(500),
+    min_staff_req int NOT NULL,
+    capacity int NOT NULL,
+    price decimal(4,2) NOT NULL,
+    end_date date NOT NULL,
     PRIMARY KEY (name, start_date, site_name),
     CONSTRAINT event_fk1 FOREIGN KEY (site_name) REFERENCES site (name) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+INSERT INTO event VALUES
+    ('ice cream','2014-02-04','site1','fjdk',304,4,23.4,'2018-03-23');
 
 
 DROP TABLE IF EXISTS take_transit;
 CREATE TABLE take_transit (
-    username varchar(20),
-    transit_type varchar(20),
-    route varchar(20),
-    take_date date,
+    username varchar(20) NOT NULL,
+    transit_type ENUM('MARTA','Bus','Bike') NOT NULL,
+    route varchar(20) NOT NULL,
+    take_date date NOT NULL,
     PRIMARY KEY (username, transit_type, route, take_date),
     CONSTRAINT take_transit_fk1 FOREIGN KEY (username) REFERENCES user (username) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT take_transit_fk2 FOREIGN KEY (transit_type, route) REFERENCES transit (type, route) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+INSERT INTO take_transit VALUES
+    ('user1','MARTA',816,'1999-04-14');
+
 
 DROP TABLE IF EXISTS visit_site;
 CREATE TABLE visit_site (
-    username varchar(20),
-    site_name varchar(40),
-    visit_date date,
+    username varchar(20) NOT NULL,
+    site_name varchar(40) NOT NULL,
+    visit_date date NOT NULL,
     PRIMARY KEY (username, site_name, visit_date),
-    CONSTRAINT visit_site_fk1 FOREIGN KEY (username) REFERENCES visitor_list (username) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT visit_site_fk1 FOREIGN KEY (username) REFERENCES user (username) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT visit_site_fk2 FOREIGN KEY (site_name) REFERENCES site (name) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -153,13 +163,13 @@ CREATE TABLE visit_site (
 
 DROP TABLE IF EXISTS visit_event;
 CREATE TABLE visit_event (
-    username varchar(20),
-    event_name varchar(40),
-    start_date date,
-    site_name varchar(40),
-    visit_date date,
+    username varchar(20) NOT NULL,
+    event_name varchar(40) NOT NULL,
+    start_date date NOT NULL,
+    site_name varchar(40) NOT NULL,
+    visit_date date NOT NULL,
     PRIMARY KEY (username, event_name, start_date, site_name, visit_date),
-    CONSTRAINT visit_event_fk1 FOREIGN KEY (username) REFERENCES visitor_list (username) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT visit_event_fk1 FOREIGN KEY (username) REFERENCES user (username) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT visit_event_fk2 FOREIGN KEY (event_name, start_date, site_name) REFERENCES event (name, start_date, site_name) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -169,9 +179,9 @@ CREATE TABLE visit_event (
 
 DROP TABLE IF EXISTS transit_connections;
 CREATE TABLE transit_connections (
-    site_name varchar(40),
-    transit_type varchar(20),
-    route varchar(20),
+    site_name varchar(40) NOT NULL,
+    transit_type ENUM('MARTA','Bus','Bike') NOT NULL,
+    route varchar(20) NOT NULL,
     PRIMARY KEY (site_name, transit_type, route),
     CONSTRAINT transit_connections_fk1 FOREIGN KEY (site_name) REFERENCES site (name) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT transit_connections_fk2 FOREIGN KEY (transit_type, route) REFERENCES transit (type, route) ON UPDATE CASCADE ON DELETE CASCADE
@@ -183,10 +193,10 @@ CREATE TABLE transit_connections (
 
 DROP TABLE IF EXISTS event_staff_assignments;
 CREATE TABLE event_staff_assignments (
-    employeeID int(9),
-    event_name varchar(40),
-    start_date date,
-    site_name varchar(40),
+    employeeID int(9) NOT NULL,
+    event_name varchar(40) NOT NULL,
+    start_date date NOT NULL,
+    site_name varchar(40) NOT NULL,
     PRIMARY KEY (employeeID, event_name, start_date, site_name),
     CONSTRAINT event_staff_assignments_fk1 FOREIGN KEY (employeeID) REFERENCES employee (employeeID) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT event_staff_assignments_fk2 FOREIGN KEY (event_name, start_date, site_name) REFERENCES event (name, start_date, site_name) ON UPDATE CASCADE ON DELETE CASCADE
