@@ -19,9 +19,9 @@ CREATE TABLE user (
 INSERT INTO user VALUES
     ('user1', 'Visitor', 'Patrick', 'Crawford', 'Declined', 'password1'),
     ('user2', 'Employee', 'Madison', 'Smith', 'Approved', 'password2'),
-    ('user3', 'Both', 'Lauren', 'Johnson', 'Approved', 'password3'),
+    ('user3', 'User', 'Lauren', 'Johnson', 'Approved', 'password3'),
     ('user4', 'Visitor', 'Katie', 'Neil', 'Pending', 'password4'),
-    ('user5', 'Both', 'Abbey', 'Nannis', 'Approved', 'password5');
+    ('user5', 'User', 'Abbey', 'Nannis', 'Approved', 'password5');
 
 
 
@@ -56,7 +56,7 @@ INSERT INTO email VALUES
 
 DROP TABLE IF EXISTS employee;
 CREATE TABLE employee (
-    employeeID int(9) PRIMARY KEY,
+    employeeID int(9) PRIMARY KEY AUTO_INCREMENT,
     username varchar(20) UNIQUE KEY,
     phone decimal(10,0) UNIQUE KEY,
     address varchar(40),
@@ -69,13 +69,13 @@ CREATE TABLE employee (
 
 CREATE TABLE visitor_list (
     username varchar(20) PRIMARY KEY,
-    CONSTRAINT visitor_list_fk1 FOREIGN KEY username REFERENCES user(username)   
+    CONSTRAINT visitor_list_fk1 FOREIGN KEY (username) REFERENCES user(username)   
 );
 -- change visit site and visit event table
-INSERT INTO employee VALUES
-    (1, 'user2', 6789998212, '123 Address Lane', 'Atlanta', 'GA', 30030, 'Staff'),
-    (2, 'user3', 4040001111, '456 Address Street', 'Dallas', 'TX', 300309212, 'Manager'),
-    (3, 'user4', 7701112222, 'New York City', 'NY', 300309212, 'Administrator');
+INSERT INTO employee(username,phone,address,city,state,zipcode,employee_type) VALUES
+    ('user2', 6789998212, '123 Address Lane', 'Atlanta', 'GA', 30030, 'Staff'),
+    ('user3', 4040001111, '456 Address Street', 'Dallas', 'TX', 300309212, 'Manager'),
+    ('user4', 7701112222,'', 'New York City', 'NY', 300309212, 'Administrator');
 
 
 
@@ -115,8 +115,8 @@ CREATE TABLE event (
     start_date date,
     site_name varchar(40),
     description varchar(100),
-    min_staff_req decimal(4,0),
-    capacity decimal(5,0),
+    min_staff_req int(4),
+    capacity int(5),
     price decimal(3,2),
     end_date date,
     PRIMARY KEY (name, start_date, site_name),
@@ -157,7 +157,7 @@ CREATE TABLE visit_event (
     event_name varchar(40),
     start_date date,
     site_name varchar(40),
-    visit_date char(10),
+    visit_date date,
     PRIMARY KEY (username, event_name, start_date, site_name, visit_date),
     CONSTRAINT visit_event_fk1 FOREIGN KEY (username) REFERENCES user (username) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT visit_event_fk2 FOREIGN KEY (event_name, start_date, site_name) REFERENCES event (name, start_date, site_name) ON UPDATE CASCADE ON DELETE CASCADE
@@ -183,7 +183,7 @@ CREATE TABLE transit_connections (
 
 DROP TABLE IF EXISTS event_staff_assignments;
 CREATE TABLE event_staff_assignments (
-    employeeID decimal(10,0),
+    employeeID int(9),
     event_name varchar(40),
     start_date date,
     site_name varchar(40),
