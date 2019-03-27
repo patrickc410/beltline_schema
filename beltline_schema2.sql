@@ -86,7 +86,7 @@ CREATE TABLE site (
     zipcode int(5),
     openeveryday ENUM('Yes','No') NOT NULL,
     managerID int(9) NOT NULL,
-    CONSTRAINT site_fk1 FOREIGN KEY (managerID) REFERENCES employee (employeeID)
+    CONSTRAINT site_fk1 FOREIGN KEY (managerID) REFERENCES employee (employeeID) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 INSERT INTO site VALUES
@@ -143,7 +143,7 @@ CREATE TABLE visit_site (
     site_name varchar(40),
     visit_date date,
     PRIMARY KEY (username, site_name, visit_date),
-    CONSTRAINT visit_site_fk1 FOREIGN KEY (username) REFERENCES user (username) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT visit_site_fk1 FOREIGN KEY (username) REFERENCES visitor_list (username) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT visit_site_fk2 FOREIGN KEY (site_name) REFERENCES site (name) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -159,7 +159,7 @@ CREATE TABLE visit_event (
     site_name varchar(40),
     visit_date date,
     PRIMARY KEY (username, event_name, start_date, site_name, visit_date),
-    CONSTRAINT visit_event_fk1 FOREIGN KEY (username) REFERENCES user (username) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT visit_event_fk1 FOREIGN KEY (username) REFERENCES visitor_list (username) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT visit_event_fk2 FOREIGN KEY (event_name, start_date, site_name) REFERENCES event (name, start_date, site_name) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
