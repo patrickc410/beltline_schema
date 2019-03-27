@@ -56,7 +56,7 @@ INSERT INTO email VALUES
 
 DROP TABLE IF EXISTS employee;
 CREATE TABLE employee (
-    employeeID int AUTO_INCREMENT = 100000000,
+    employeeID int AUTO_INCREMENT,
     username varchar(20) UNIQUE KEY NOT NULL,
     phone decimal(10,0) UNIQUE KEY NOT NULL,
     address varchar(40) NOT NULL,
@@ -64,10 +64,11 @@ CREATE TABLE employee (
     state varchar(15) NOT NULL,
     zipcode int(9) NOT NULL,
     employee_type ENUM('Administrator','Staff','Manager') NOT NULL,
-    PRIMARY KEY(employeeID)
+    PRIMARY KEY(employeeID),
     CONSTRAINT employee_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+ALTER TABLE employee AUTO_INCREMENT = 100000000;
 
 CREATE TABLE visitor_list (
     username varchar(20) PRIMARY KEY,
@@ -89,14 +90,14 @@ CREATE TABLE site (
     address varchar(40),
     zipcode int(5) NOT NULL,
     openeveryday ENUM('Yes','No') NOT NULL,
-    managerID int(9) NOT NULL,
+    managerID int NOT NULL,
     CONSTRAINT site_fk1 FOREIGN KEY (managerID) REFERENCES employee (employeeID) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 INSERT INTO site VALUES
-    ('site1', '111 Site1 Way', 300309999, 'Yes', 0000000002),
-    ('site2', '222 Site2 Way', 300309999, 'No', 0000000002),
-    ('site3', '333 Site3 Way', 300309999, 'Yes', 0000000002);
+    ('site1', '111 Site1 Way', 300309999, 'Yes', 100000002),
+    ('site2', '222 Site2 Way', 300309999, 'No', 100000002),
+    ('site3', '333 Site3 Way', 300309999, 'Yes', 100000002);
 
 
 
@@ -193,7 +194,7 @@ CREATE TABLE transit_connections (
 
 DROP TABLE IF EXISTS event_staff_assignments;
 CREATE TABLE event_staff_assignments (
-    employeeID int(9) NOT NULL,
+    employeeID int NOT NULL,
     event_name varchar(40) NOT NULL,
     start_date date NOT NULL,
     site_name varchar(40) NOT NULL,
