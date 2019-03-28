@@ -4,7 +4,6 @@ USE beltline;
 
 
 
-
 DROP TABLE IF EXISTS user;
 CREATE TABLE user (
     username varchar(20) PRIMARY KEY,
@@ -16,6 +15,7 @@ CREATE TABLE user (
 );
 
 
+
 DROP TABLE IF EXISTS email;
 CREATE TABLE email (
     username varchar(20),
@@ -23,6 +23,8 @@ CREATE TABLE email (
     PRIMARY KEY (email),
     CONSTRAINT email_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
 );
+
+
 
 -- we created the visitor_list table to hold all of the visitor ands and employee-visitors,
 -- so when a visitor is deleted or employee-visitor returns to a plain employee status,
@@ -32,6 +34,7 @@ CREATE TABLE visitor_list (
     username varchar(20) PRIMARY KEY,
     CONSTRAINT visitor_list_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
 );
+
 
 
 DROP TABLE IF EXISTS employee;
@@ -53,6 +56,7 @@ CREATE TABLE employee (
 );
 
 ALTER TABLE employee AUTO_INCREMENT = 100000000;
+
 
 
 DROP TABLE IF EXISTS site;
@@ -77,6 +81,7 @@ CREATE TABLE transit (
 );
 
 
+
 DROP TABLE IF EXISTS event;
 CREATE TABLE event (
     name varchar(40) NOT NULL,
@@ -92,6 +97,7 @@ CREATE TABLE event (
 );
 
 
+
 DROP TABLE IF EXISTS take_transit;
 CREATE TABLE take_transit (
     username varchar(20) NOT NULL,
@@ -104,6 +110,7 @@ CREATE TABLE take_transit (
 );
 
 
+
 DROP TABLE IF EXISTS visit_site;
 CREATE TABLE visit_site (
     username varchar(20) NOT NULL,
@@ -113,8 +120,6 @@ CREATE TABLE visit_site (
     CONSTRAINT visit_site_fk1 FOREIGN KEY (username) REFERENCES visitor_list (username) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT visit_site_fk2 FOREIGN KEY (site_name) REFERENCES site (name) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
-
 
 
 
@@ -132,8 +137,6 @@ CREATE TABLE visit_event (
 
 
 
-
-
 DROP TABLE IF EXISTS transit_connections;
 CREATE TABLE transit_connections (
     site_name varchar(40) NOT NULL,
@@ -143,8 +146,6 @@ CREATE TABLE transit_connections (
     CONSTRAINT transit_connections_fk1 FOREIGN KEY (site_name) REFERENCES site (name) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT transit_connections_fk2 FOREIGN KEY (transit_type, route) REFERENCES transit (type, route) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
-
 
 
 
