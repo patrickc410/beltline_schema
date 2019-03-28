@@ -21,7 +21,9 @@ CREATE TABLE email (
     username varchar(20),
     email varchar(100) NOT NULL,
     PRIMARY KEY (email),
-    CONSTRAINT email_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT email_fk1 FOREIGN KEY (username) 
+        REFERENCES user(username) 
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 
@@ -32,7 +34,9 @@ CREATE TABLE email (
 -- visit_site and visit_event history will be deleted, too
 CREATE TABLE visitor_list (
     username varchar(20) PRIMARY KEY,
-    CONSTRAINT visitor_list_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT visitor_list_fk1 FOREIGN KEY (username) 
+        REFERENCES user(username) 
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 
@@ -52,7 +56,9 @@ CREATE TABLE employee (
     zipcode char(5) NOT NULL,
     employee_type ENUM('Administrator','Staff','Manager') NOT NULL,
     PRIMARY KEY(employeeID),
-    CONSTRAINT employee_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT employee_fk1 FOREIGN KEY (username) 
+        REFERENCES user(username) 
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 ALTER TABLE employee AUTO_INCREMENT = 100000000;
@@ -66,7 +72,9 @@ CREATE TABLE site (
     zipcode char(5) NOT NULL,
     openeveryday ENUM('Yes','No') NOT NULL,
     managerID int NOT NULL,
-    CONSTRAINT site_fk1 FOREIGN KEY (managerID) REFERENCES employee (employeeID) ON UPDATE CASCADE ON DELETE RESTRICT
+    CONSTRAINT site_fk1 FOREIGN KEY (managerID) 
+        REFERENCES employee (employeeID) 
+        ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 
@@ -92,7 +100,9 @@ CREATE TABLE event (
     price decimal(4,2) NOT NULL,
     end_date date NOT NULL,
     PRIMARY KEY (name, start_date, site_name),
-    CONSTRAINT event_fk1 FOREIGN KEY (site_name) REFERENCES site (name) ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT event_fk1 FOREIGN KEY (site_name) 
+        REFERENCES site (name) 
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 
@@ -104,8 +114,11 @@ CREATE TABLE take_transit (
     route varchar(20) NOT NULL,
     take_date date NOT NULL,
     PRIMARY KEY (username, transit_type, route, take_date),
-    CONSTRAINT take_transit_fk1 FOREIGN KEY (username) REFERENCES user (username) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT take_transit_fk2 FOREIGN KEY (transit_type, route) REFERENCES transit (type, route) ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT take_transit_fk1 FOREIGN KEY (username) REFERENCES user (username) 
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT take_transit_fk2 FOREIGN KEY (transit_type, route) 
+        REFERENCES transit (type, route) 
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 
@@ -116,8 +129,12 @@ CREATE TABLE visit_site (
     site_name varchar(40) NOT NULL,
     visit_date date NOT NULL,
     PRIMARY KEY (username, site_name, visit_date),
-    CONSTRAINT visit_site_fk1 FOREIGN KEY (username) REFERENCES visitor_list (username) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT visit_site_fk2 FOREIGN KEY (site_name) REFERENCES site (name) ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT visit_site_fk1 FOREIGN KEY (username) 
+        REFERENCES visitor_list (username) 
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT visit_site_fk2 FOREIGN KEY (site_name) 
+        REFERENCES site (name) 
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 
@@ -130,8 +147,12 @@ CREATE TABLE visit_event (
     site_name varchar(40) NOT NULL,
     visit_date date NOT NULL,
     PRIMARY KEY (username, event_name, start_date, site_name, visit_date),
-    CONSTRAINT visit_event_fk1 FOREIGN KEY (username) REFERENCES visitor_list (username) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT visit_event_fk2 FOREIGN KEY (event_name, start_date, site_name) REFERENCES event (name, start_date, site_name) ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT visit_event_fk1 FOREIGN KEY (username) 
+        REFERENCES visitor_list (username) 
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT visit_event_fk2 FOREIGN KEY (event_name, start_date, site_name) 
+        REFERENCES event (name, start_date, site_name) 
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 
@@ -142,8 +163,12 @@ CREATE TABLE transit_connections (
     transit_type ENUM('MARTA','Bus','Bike') NOT NULL,
     route varchar(20) NOT NULL,
     PRIMARY KEY (site_name, transit_type, route),
-    CONSTRAINT transit_connections_fk1 FOREIGN KEY (site_name) REFERENCES site (name) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT transit_connections_fk2 FOREIGN KEY (transit_type, route) REFERENCES transit (type, route) ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT transit_connections_fk1 FOREIGN KEY (site_name) 
+        REFERENCES site (name) 
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT transit_connections_fk2 FOREIGN KEY (transit_type, route) 
+        REFERENCES transit (type, route) 
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 
@@ -155,6 +180,10 @@ CREATE TABLE event_staff_assignments (
     start_date date NOT NULL,
     site_name varchar(40) NOT NULL,
     PRIMARY KEY (employeeID, event_name, start_date, site_name),
-    CONSTRAINT event_staff_assignments_fk1 FOREIGN KEY (employeeID) REFERENCES employee (employeeID) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT event_staff_assignments_fk2 FOREIGN KEY (event_name, start_date, site_name) REFERENCES event (name, start_date, site_name) ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT event_staff_assignments_fk1 FOREIGN KEY (employeeID) 
+        REFERENCES employee (employeeID) 
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT event_staff_assignments_fk2 FOREIGN KEY (event_name, start_date, site_name) 
+        REFERENCES event (name, start_date, site_name) 
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
