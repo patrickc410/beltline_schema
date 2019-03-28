@@ -30,7 +30,7 @@ DROP TABLE IF EXISTS email;
 CREATE TABLE email (
     username varchar(20),
     email varchar(100) NOT NULL,
-    PRIMARY KEY (username, email),
+    PRIMARY KEY (email),
     CONSTRAINT email_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
