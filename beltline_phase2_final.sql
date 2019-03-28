@@ -24,25 +24,6 @@ CREATE TABLE email (
     CONSTRAINT email_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-
-INSERT INTO email VALUES
-    ('user1', 'user1_email1_@gmail.com'),
-    ('user2', 'user2_email1_@aol.com'),
-    ('user2', 'user2_email2_@aol.com'),
-    ('user3', 'user3_email1_@bellsouth.net'),
-    ('user3', 'user3_email2_@bellsouth.net'),
-    ('user3', 'user3_email3_@bellsouth.net'),
-    ('user4', 'user4_email1_@yahoo.com'),
-    ('user4', 'user4_email2_@yahoo.com'),
-    ('user4', 'user4_email3_@yahoo.com'),
-    ('user4', 'user4_email4_@yahoo.com'),
-    ('user5', 'user5_email1_@icloud.com'),
-    ('user5', 'user5_email2_@icloud.com'),
-    ('user5', 'user5_email3_@icloud.com'),
-    ('user5', 'user5_email4_@icloud.com'),
-    ('user5', 'user5_email5_@icloud.com');
-
-
 -- we created the visitor_list table to hold all of the visitor ands and employee-visitors,
 -- so when a visitor is deleted or employee-visitor returns to a plain employee status,
 -- they will be deleted from this table, and consquently, all of their associated
@@ -51,11 +32,6 @@ CREATE TABLE visitor_list (
     username varchar(20) PRIMARY KEY,
     CONSTRAINT visitor_list_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
-INSERT INTO visitor_list VALUES
-    ('user1'),
-    ('user4'),
-    ('user2');
 
 
 DROP TABLE IF EXISTS employee;
@@ -78,12 +54,6 @@ CREATE TABLE employee (
 
 ALTER TABLE employee AUTO_INCREMENT = 100000000;
 
-INSERT INTO employee(username,phone,address,city,state,zipcode,employee_type) VALUES
-    ('user2', 6789998212, '123 Address Lane', 'Atlanta', 'GA', 30030, 'Staff'),
-    ('user3', 4040001111, '456 Address Street', 'Dallas', 'TX', 30035, 'Manager'),
-    ('user4', 7701112222,'', 'New York City', 'NY', 30036, 'Administrator');
-
-
 
 DROP TABLE IF EXISTS site;
 CREATE TABLE site (
@@ -95,12 +65,6 @@ CREATE TABLE site (
     CONSTRAINT site_fk1 FOREIGN KEY (managerID) REFERENCES employee (employeeID) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
-INSERT INTO site VALUES
-    ('site1', '111 Site1 Way', 30030, 'Yes', 100000002),
-    ('site2', '222 Site2 Way', 30030, 'No', 100000002),
-    ('site3', '333 Site3 Way', 30030, 'Yes', 100000002);
-
-
 
 
 DROP TABLE IF EXISTS transit;
@@ -111,9 +75,6 @@ CREATE TABLE transit (
     connected_sites int(2) NOT NULL,
     PRIMARY KEY (type, route)
 );
-INSERT INTO transit VALUES
-    ('MARTA',816, 4.30,4);
-
 
 
 DROP TABLE IF EXISTS event;
@@ -130,9 +91,6 @@ CREATE TABLE event (
     CONSTRAINT event_fk1 FOREIGN KEY (site_name) REFERENCES site (name) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-INSERT INTO event VALUES
-    ('ice cream','2014-02-04','site1','fjdk',304,4,23.4,'2018-03-23');
-
 
 DROP TABLE IF EXISTS take_transit;
 CREATE TABLE take_transit (
@@ -144,9 +102,6 @@ CREATE TABLE take_transit (
     CONSTRAINT take_transit_fk1 FOREIGN KEY (username) REFERENCES user (username) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT take_transit_fk2 FOREIGN KEY (transit_type, route) REFERENCES transit (type, route) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
-INSERT INTO take_transit VALUES
-    ('user1','MARTA',816,'1999-04-14');
 
 
 DROP TABLE IF EXISTS visit_site;
