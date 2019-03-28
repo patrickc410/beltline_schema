@@ -53,6 +53,20 @@ INSERT INTO email VALUES
     ('user5', 'user5_email5_@icloud.com');
 
 
+-- we created the visitor_list table to hold all of the visitor ands and employee-visitors,
+-- so when a visitor is deleted or employee-visitor returns to a plain employee status,
+-- they will be deleted from this table, and consquently, all of their associated
+-- visit_site and visit_event history will be deleted, too
+CREATE TABLE visitor_list (
+    username varchar(20) PRIMARY KEY,
+    CONSTRAINT visitor_list_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+INSERT INTO visitor_list VALUES
+    ('user1'),
+    ('user4'),
+    ('user2');
+
 
 DROP TABLE IF EXISTS employee;
 CREATE TABLE employee (
@@ -74,13 +88,6 @@ CREATE TABLE employee (
 
 ALTER TABLE employee AUTO_INCREMENT = 100000000;
 
-CREATE TABLE visitor_list (
-    username varchar(20) PRIMARY KEY,
-    CONSTRAINT visitor_list_fk1 FOREIGN KEY (username) REFERENCES user(username)
-);
--- we created the visitor_list table to hold all of the visitor ands and employee-visitors,
--- so when a visitor is deleted or employee-visitor returns to a plain employee status,
--- they will be deleted from this table, and consquently, all of their associated history will be deleted, too
 INSERT INTO employee(username,phone,address,city,state,zipcode,employee_type) VALUES
     ('user2', 6789998212, '123 Address Lane', 'Atlanta', 'GA', 30030, 'Staff'),
     ('user3', 4040001111, '456 Address Street', 'Dallas', 'TX', 30035, 'Manager'),
@@ -158,7 +165,7 @@ CREATE TABLE visit_site (
     site_name varchar(40) NOT NULL,
     visit_date date NOT NULL,
     PRIMARY KEY (username, site_name, visit_date),
-    CONSTRAINT visit_site_fk1 FOREIGN KEY (username) REFERENCES user (username) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT visit_site_fk1 FOREIGN KEY (username) REFERENCES visitor_list (username) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT visit_site_fk2 FOREIGN KEY (site_name) REFERENCES site (name) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -174,7 +181,7 @@ CREATE TABLE visit_event (
     site_name varchar(40) NOT NULL,
     visit_date date NOT NULL,
     PRIMARY KEY (username, event_name, start_date, site_name, visit_date),
-    CONSTRAINT visit_event_fk1 FOREIGN KEY (username) REFERENCES user (username) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT visit_event_fk1 FOREIGN KEY (username) REFERENCES visitor_list (username) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT visit_event_fk2 FOREIGN KEY (event_name, start_date, site_name) REFERENCES event (name, start_date, site_name) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
