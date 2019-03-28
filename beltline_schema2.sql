@@ -106,9 +106,9 @@ CREATE TABLE site (
 );
 
 INSERT INTO site VALUES
-    ('site1', '111 Site1 Way', 300309999, 'Yes', 100000002),
-    ('site2', '222 Site2 Way', 300309999, 'No', 100000002),
-    ('site3', '333 Site3 Way', 300309999, 'Yes', 100000002);
+    ('site1', '111 Site1 Way', 30030, 'Yes', 100000002),
+    ('site2', '222 Site2 Way', 30030, 'No', 100000002),
+    ('site3', '333 Site3 Way', 30030, 'Yes', 100000002);
 
 
 
