@@ -75,8 +75,7 @@ DROP TABLE IF EXISTS transit;
 CREATE TABLE transit (
     type ENUM('MARTA','Bus','Bike') NOT NULL,
     route varchar(20) NOT NULL,
-    price decimal(3,2) NOT NULL,
-    connected_sites int(2) NOT NULL,
+    price decimal(4,2) NOT NULL,
     PRIMARY KEY (type, route)
 );
 
