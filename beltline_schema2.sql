@@ -16,14 +16,6 @@ CREATE TABLE user (
 );
 
 
-INSERT INTO user VALUES
-    ('user1', 'Visitor', 'Patrick', 'Crawford', 'Declined', 'password1'),
-    ('user2', 'Employee', 'Madison', 'Smith', 'Approved', 'password2'),
-    ('user3', 'User', 'Lauren', 'Johnson', 'Approved', 'password3'),
-    ('user4', 'Visitor', 'Katie', 'Neil', 'Pending', 'password4'),
-    ('user5', 'User', 'Abbey', 'Nannis', 'Approved', 'password5');
-
-
 
 
 DROP TABLE IF EXISTS email;
