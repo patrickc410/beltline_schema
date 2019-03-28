@@ -80,7 +80,7 @@ CREATE TABLE employee (
                'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
                'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
                'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'Other') NOT NULL,
-    zipcode decimal(5,0) NOT NULL,
+    zipcode char(5) NOT NULL,
     employee_type ENUM('Administrator','Staff','Manager') NOT NULL,
     PRIMARY KEY(employeeID),
     CONSTRAINT employee_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
@@ -99,7 +99,7 @@ DROP TABLE IF EXISTS site;
 CREATE TABLE site (
     name varchar(40) PRIMARY KEY,
     address varchar(40),
-    zipcode decimal(5,0) NOT NULL,
+    zipcode char(5) NOT NULL,
     openeveryday ENUM('Yes','No') NOT NULL,
     managerID int NOT NULL,
     CONSTRAINT site_fk1 FOREIGN KEY (managerID) REFERENCES employee (employeeID) ON UPDATE CASCADE ON DELETE RESTRICT
