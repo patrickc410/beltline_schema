@@ -99,7 +99,7 @@ DROP TABLE IF EXISTS site;
 CREATE TABLE site (
     name varchar(40) PRIMARY KEY,
     address varchar(40),
-    zipcode int(5) NOT NULL,
+    zipcode decimal(5,0) NOT NULL,
     openeveryday ENUM('Yes','No') NOT NULL,
     managerID int NOT NULL,
     CONSTRAINT site_fk1 FOREIGN KEY (managerID) REFERENCES employee (employeeID) ON UPDATE CASCADE ON DELETE RESTRICT
