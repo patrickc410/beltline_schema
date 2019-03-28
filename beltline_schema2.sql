@@ -61,12 +61,12 @@ CREATE TABLE employee (
     phone decimal(10,0) UNIQUE KEY NOT NULL,
     address varchar(40) NOT NULL,
     city varchar(20) NOT NULL,
-    state ENUM('AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 
-               'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 
-               'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 
-               'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 
+    state ENUM('AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+               'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+               'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+               'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
                'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'Other') NOT NULL,
-    zipcode int(9) NOT NULL,
+    zipcode decimal(5,0) NOT NULL,
     employee_type ENUM('Administrator','Staff','Manager') NOT NULL,
     PRIMARY KEY(employeeID),
     CONSTRAINT employee_fk1 FOREIGN KEY (username) REFERENCES user(username) ON UPDATE CASCADE ON DELETE CASCADE
@@ -83,8 +83,8 @@ CREATE TABLE visitor_list (
 -- they will be deleted from this table, and consquently, all of their associated history will be deleted, too
 INSERT INTO employee(username,phone,address,city,state,zipcode,employee_type) VALUES
     ('user2', 6789998212, '123 Address Lane', 'Atlanta', 'GA', 30030, 'Staff'),
-    ('user3', 4040001111, '456 Address Street', 'Dallas', 'TX', 300309212, 'Manager'),
-    ('user4', 7701112222,'', 'New York City', 'NY', 300309212, 'Administrator');
+    ('user3', 4040001111, '456 Address Street', 'Dallas', 'TX', 30035, 'Manager'),
+    ('user4', 7701112222,'', 'New York City', 'NY', 30036, 'Administrator');
 
 
 
