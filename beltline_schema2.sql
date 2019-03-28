@@ -72,7 +72,7 @@ DROP TABLE IF EXISTS employee;
 CREATE TABLE employee (
     employeeID int AUTO_INCREMENT,
     username varchar(20) UNIQUE KEY NOT NULL,
-    phone decimal(10,0) UNIQUE KEY NOT NULL,
+    phone char(10) UNIQUE KEY NOT NULL,
     address varchar(40) NOT NULL,
     city varchar(20) NOT NULL,
     state ENUM('AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
