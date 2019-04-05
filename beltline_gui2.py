@@ -92,7 +92,9 @@ class RegisterUser(QWidget):
 
 
         if (username == '' or password == '' or firstname == '' \
-            or lastname == '' or confirmpassword == ''):
+            or lastname == '' or confirmpassword == '' \
+            or (len(self.email_box.email_list)) == 0 \
+            and self.email_box.email_input.text() == ''):
             QMessageBox.warning(
                 self, 'Error', 'Please fill in all the text fields')
         elif (username in username_list):
@@ -106,6 +108,20 @@ class RegisterUser(QWidget):
             query = f"insert into user values ('{username}', 'User'," \
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
             cursor.execute(query)
+
+            for x in self.email_box.email_list:
+
+                query2 = f"insert into email values ('{username}', '{x}');"
+                cursor.execute(query2)
+
+            if (self.email_box.email_input.text() != '' \
+                and self.email_box.email_input.text() != ' ' \
+                and self.email_box.email_input.text() not in self.email_box.email_list):
+
+                query3 = f"insert into email values ('{username}, " \
+                    + f"{self.email_box.email_input.text()});"
+                cursor.execute(query3)
+
             connection.commit()
             cursor.close()
             print("succesful registration")
@@ -152,6 +168,11 @@ class EmailBox(QGroupBox):
         self.hbox2.addWidget(self.add_button)
 
     def handle_add_email(self):
+
+        cursor = connection.cursor()
+        query = "select email from email;"
+        cursor.execute(query)
+
 
         email1 = self.email_input.text()
         email_format = r'\S+@\S+\.\S+'
@@ -282,7 +303,7 @@ class UserLogin(QWidget):
     def __init__(self, parent=None):
         super(UserLogin, self).__init__(parent)
         self.setWindowTitle("Atlanta Beltline Login")
-        self.username = QLineEdit(self)
+        self.email = QLineEdit(self)
         self.password = QLineEdit(self)
         self.buttonLogin = QPushButton('Login', self)
         self.buttonRegister = QPushButton('Register', self)
@@ -293,7 +314,7 @@ class UserLogin(QWidget):
 
         form_group_box = QGroupBox()
         form_layout = QFormLayout()
-        form_layout.addRow(QLabel("Username: "), self.username)
+        form_layout.addRow(QLabel("Email: "), self.email)
         form_layout.addRow(QLabel("Password: "), self.password)
         form_group_box.setLayout(form_layout)
 
@@ -309,16 +330,16 @@ class UserLogin(QWidget):
 
         load_login_data()
 
-        username = self.username.text()
+        email = self.email.text()
         password = self.password.text()
 
-        if (username == '' or password == ''):
+        if (email == '' or password == ''):
             QMessageBox.warning(
                 self, 'Error', 'Please fill in both the username and the password fields')
-        elif (username not in login_dict.keys()):
+        elif (email not in login_dict.keys()):
             QMessageBox.warning(
                 self, 'Error', 'The username provided is not an existing user')
-        elif (login_dict[username] != password):
+        elif (login_dict[email] != password):
             QMessageBox.warning(
                 self, 'Error', 'The password provided is incorrect')
         else:
@@ -365,13 +386,13 @@ def establish_connection(mysql_password):
 
 def load_login_data():
     cursor = connection.cursor()
-    cursor.execute('select * from user;')
+    cursor.execute('select email, password from email join user using (username);')
     user_data = [line for line in cursor]
     cursor.close()
     global login_dict
     login_dict = {}
     for user_dict in user_data:
-        login_dict[user_dict['username']] = user_dict['password']
+        login_dict[user_dict['email']] = user_dict['password']
     return login_dict
 
 
