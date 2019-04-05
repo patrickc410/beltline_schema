@@ -55,16 +55,7 @@ class RegisterUser(QWidget):
         self.form_layout.addRow(QLabel("Confirm Password: "), self.confirmpassword)
         self.form_group_box.setLayout(self.form_layout)
 
-        self.form_group_box2 = QGroupBox()
-        self.form_layout2 = QHBoxLayout()
-        self.email = QLineEdit(self)
-        self.add_button = QPushButton("Add", self)
-        self.add_button.clicked.connect(self.handle_add_email)
-        self.form_layout2.addWidget(QLabel("Email: "))
-        self.form_layout2.addWidget(self.email)
-        self.form_layout2.addWidget(self.add_button)
-        self.form_group_box2.setLayout(self.form_layout2)
-
+        self.email_box = EmailBox(self)
 
         self.buttonBack = QPushButton('Back', self)
         self.buttonRegister = QPushButton('Register', self)
@@ -77,20 +68,11 @@ class RegisterUser(QWidget):
         self.form_layout3.addRow(self.buttonRegister, self.buttonBack)
         self.form_group_box3.setLayout(self.form_layout3)
 
-        # hbox = QHBoxLayout()
-        # hbox.addWidget(self.buttonRegister)
-        # hbox.addWidget(self.buttonBack)
-
         self.vbox = QVBoxLayout()
         self.vbox.addWidget(self.form_group_box)
-        self.vbox.addWidget(self.form_group_box2)
-        # vbox.addWidget(self.buttonRegister)
-        # vbox.addWidget(self.buttonBack)
+        self.vbox.addWidget(self.email_box)
 
         self.vbox.addWidget(self.form_group_box3)
-
-        # vbox.addWidget(self.buttonRegister)
-        # vbox.addWidget(self.buttonBack)
 
         self.setLayout(self.vbox)
 
@@ -124,6 +106,7 @@ class RegisterUser(QWidget):
             query = f"insert into user values ('{username}', 'User'," \
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
             cursor.execute(query)
+            connection.commit()
             cursor.close()
             print("succesful registration")
 
@@ -133,58 +116,83 @@ class RegisterUser(QWidget):
             self.parent.back()
 
 
+class EmailBox(QGroupBox):
+    def __init__(self, parent, email_count=0):
+        super(EmailBox, self).__init__(parent)
+        self.parent = parent
+        self.email_count = email_count
+
+        self.vbox = QVBoxLayout()
+        self.hbox1 = QHBoxLayout()
+        self.hbox2 = QHBoxLayout()
+
+        self.setLayout(self.vbox)
+
+        self.vbox.addLayout(self.hbox1)
+        self.vbox.addLayout(self.hbox2)
+
+        self.email_list = []
+
+        self.added_email_label = QLabel("Added Email(s): ")
+        self.added_emails = QLabel(" ")
+        self.remove_button = QPushButton("Remove Last")
+        self.remove_button.clicked.connect(self.handle_remove_email)
+
+        self.hbox1.addWidget(self.added_email_label)
+        self.hbox1.addWidget(self.added_emails)
+        self.hbox1.addWidget(self.remove_button)
+
+        self.add_button = QPushButton("Add")
+        self.add_button.clicked.connect(self.handle_add_email)
+        self.email_input = QLineEdit()
+        self.email_label = QLabel("Email: ")
+
+        self.hbox2.addWidget(self.email_label)
+        self.hbox2.addWidget(self.email_input)
+        self.hbox2.addWidget(self.add_button)
 
     def handle_add_email(self):
 
-        email1 = self.email.text()
-
+        email1 = self.email_input.text()
         email_format = r'\S+@\S+\.\S+'
-
         email_check = re.fullmatch(email_format, email1)
-
-
         if (email1 == ''):
             QMessageBox.warning(
-                self, 'Error', 'Please fill in the email field')
+                self.parent, 'Error', 'Please fill in the email field')
         elif email_check == None:
             QMessageBox.warning(
-                self, 'Error', 'Please enter a valid email address')
+                self.parent, 'Error', 'Please enter a valid email address')
+        elif (email1 in self.email_list):
+            QMessageBox.warning(
+                self.parent, 'Error', 'Each email must be unique')
         else:
+            self.email_list.append(email1)
             self.email_count += 1
-
-            self.hide()
-            self.vbox.removeWidget(self.form_group_box3)
-
-            for i in len(range(self.email_count)):
-                pass
-
-
-
-            # self.form_group_box2 = QGroupBox()
-            # self.form_layout2 = QHBoxLayout()
-            # self.email = QLineEdit(self)
-            # self.add_button = QPushButton("Add", self)
-            # self.add_button.clicked.connect(self.handle_add_email)
-            # self.form_layout2.addWidget(QLabel("Email: "))
-            # self.form_layout2.addWidget(self.email)
-            # self.form_layout2.addWidget(self.add_button)
-            # self.form_group_box2.setLayout(self.form_layout2)
+            count = self.email_count
+            self.parent.hide()
+            if (self.email_count == 1):
+                self.added_emails.setText(f"{email1}")
+            else:
+                self.added_emails.setText(f"{self.added_emails.text()},\n {email1}")
+            self.parent.show()
 
 
-            # self.form_group_box2 = QGroupBox()
-            # self.form_layout2 = QHBoxLayout()
-            # self.email = QLineEdit(self)
-            # self.add_button = QPushButton("Add", self)
-            # self.add_button.clicked.connect(self.handle_add_email)
-            # self.form_layout2.addWidget(QLabel("Email: "))
-            # self.form_layout2.addWidget(self.email)
-            # self.form_layout2.addWidget(self.add_button)
-            # self.form_group_box2.setLayout(self.form_layout2)
+    def handle_remove_email(self):
 
 
-
-            self.setLayout(self.vbox)
-            self.show()
+        if (self.email_count == 0):
+            QMessageBox.warning(
+                self.parent, 'Error', 'There are no emails to remove')
+        else:
+            x = self.added_emails.text()
+            y = self.email_list[self.email_count - 1]
+            y_len = len(y)
+            x = x[:len(x) - y_len - 2]
+            self.parent.hide()
+            self.added_emails.setText(f'{x}')
+            self.parent.show()
+            self.email_list.pop()
+            self.email_count -= 1
 
 
 
@@ -270,7 +278,7 @@ class RegisterNavigation(QWidget):
 
 
 
-class UserLogin(QDialog):
+class UserLogin(QWidget):
     def __init__(self, parent=None):
         super(UserLogin, self).__init__(parent)
         self.setWindowTitle("Atlanta Beltline Login")
@@ -280,6 +288,8 @@ class UserLogin(QDialog):
         self.buttonRegister = QPushButton('Register', self)
         self.buttonLogin.clicked.connect(self.handleLogin)
         self.buttonRegister.clicked.connect(self.handleRegister)
+        self.buttonLogin.setDefault(True)
+        self.buttonRegister.setDefault(False)
 
         form_group_box = QGroupBox()
         form_layout = QFormLayout()
@@ -292,6 +302,7 @@ class UserLogin(QDialog):
         vbox_layout.addWidget(self.buttonLogin)
         vbox_layout.addWidget(self.buttonRegister)
         self.setLayout(vbox_layout)
+        self.show()
 
 
     def handleLogin(self):
@@ -311,7 +322,7 @@ class UserLogin(QDialog):
             QMessageBox.warning(
                 self, 'Error', 'The password provided is incorrect')
         else:
-            self.accept()
+            print("login success")
             self.close()
 
 
@@ -335,17 +346,17 @@ class Window(QMainWindow):
 
 
 
-def establish_connection():
+def establish_connection(mysql_password):
     global connection
     try:
         connection = pymysql.connect(host='localhost',
                                      user='root',
-                                     password='Brav3s10!',
+                                     password=mysql_password,
                                      db='beltline',
                                      charset='utf8mb4',
                                      cursorclass=pymysql.cursors.DictCursor)
     except Exception as e:
-        print(f"Couldn't log {login.user.text()} in to MySQL server on {login.host.text()}")
+        print(f"Couldn't log in to MySQL server :(")
         print(e)
         qApp.quit()
         sys.exit()
@@ -364,80 +375,20 @@ def load_login_data():
     return login_dict
 
 
-# def login_sequence():
-#     pass
-
-
-
-def main():
-    # global app
-
-
-    # global connection
-    # global login_dict
-    # global login
-
-    establish_connection()
-
-    # login_sequence()
-
-    global login
-    login = UserLogin()
-
-    if login.exec_() == QDialog.Accepted:
-        print("successful login")
-        # sys.exit(app.exec_())
-        print("where am i stuck?")
-
-    print('where am i stuck now?')
-    # qApp.quit()
-
-    # sys.exit(app.exec_())
-    print("still stuck?")
-
-
-
 
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
-
-    main()
-    print('stuck Nowwwwww')
-
+    establish_connection(sys.argv[1])
+    global login
+    login = UserLogin()
     sys.exit(app.exec_())
-    # cd documents/school/spring_2019/cs_4400/project
-    # python beltline_login.py
+
+
+    # TO RUN THE GUI:
+    # python beltline_login.py {insert your mysql password here}
 
 
 
 
 
-
-
-
-# SCRAPBOOK
-
-
-# def register_sequence():
-#     global register_nav
-#     register_nav = RegisterNavigation()
-#     register_nav.show()
-#     # while register_nav.click == 0:
-#     #     pass
-
-
-
- # login_dict = load_login_data()
-
-    # login = UserLogin(login_dict)
-
-    # if login.exec_() == QDialog.Accepted:
-    #     if (login.mode == 1):
-    #         pass
-    #     elif (login.mode == 2):
-    #         pass
-
-
-    # window = Window()
-    # window.show()
