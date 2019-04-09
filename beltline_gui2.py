@@ -34,6 +34,234 @@ from PyQt5.QtGui import (
     QPixmap)
 
 
+class AdminFunctionality(QWidget):
+    def __init__(self, parent):
+        super(AdminFunctionality, self).__init__()
+        self.setWindowTitle("Administrator Functionality")
+
+        self.parent = parent
+        self.vbox = QVBoxLayout()
+
+        self.manage_profile_btn = QPushButton('Manage Profile', self)
+        self.manage_profile_btn.clicked.connect(self.handleManageProfile)
+
+        self.manage_user_btn = QPushButton('Manage User', self)
+        self.manage_user_btn.clicked.connect(self.handleManageUser)
+
+        self.manage_transit_btn = QPushButton('Manage Transit', self)
+        self.manage_transit_btn.clicked.connect(self.handleManageTransit)
+
+        self.manage_site_btn = QPushButton('Manage Site', self)
+        self.manage_site_btn.clicked.connect(self.handleManageSite)
+
+        self.take_transit_btn = QPushButton('Take Transit', self)
+        self.take_transit_btn.clicked.connect(self.handleTakeTransit)
+
+        self.view_transit_hist_btn = QPushButton('View Transit History', self)
+        self.view_transit_hist_btn.clicked.connect(self.handleViewTransitHistory)
+
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+
+        self.vbox.addWidget(self.manage_profile_btn)
+        self.vbox.addWidget(self.manage_user_btn)
+        self.vbox.addWidget(self.manage_transit_btn)
+        self.vbox.addWidget(self.manage_site_btn)
+        self.vbox.addWidget(self.take_transit_btn)
+        self.vbox.addWidget(self.view_transit_hist_btn)
+        self.vbox.addWidget(self.back_btn)
+
+        self.setLayout(self.vbox)
+
+
+    def handleManageProfile(self):
+        pass
+
+    def handleManageUser(self):
+        pass
+
+    def handleManageTransit(self):
+        pass
+
+    def handleManageSite(self):
+        pass
+
+    def handleTakeTransit(self):
+        pass
+
+    def handleViewTransitHistory(self):
+        pass
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+
+
+
+class RegisterEmpVisitor(QWidget):
+    def __init__(self, parent):
+        super(RegisterEmpVisitor, self).__init__()
+        self.setWindowTitle("Register Employee-Visitor")
+
+        self.email_count = 0
+        self.parent = parent
+        self.firstname = QLineEdit(self)
+        self.lastname = QLineEdit(self)
+        self.username = QLineEdit(self)
+        self.user_type_dropdown = QComboBox(self)
+        self.user_type_dropdown.addItems(['Select User Type', 'Manager', 'Staff'])
+
+        self.password = QLineEdit(self)
+        self.confirmpassword = QLineEdit(self)
+
+        self.phone = QLineEdit(self)
+        self.address = QLineEdit(self)
+        self.city = QLineEdit(self)
+        self.state_dropdown = QComboBox(self)
+        self.state_dropdown.addItems(
+            ['Select State', 'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+               'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+               'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+               'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+               'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'Other'])
+        self.zipcode = QLineEdit(self)
+
+
+
+        self.form_group_box = QGroupBox()
+        self.form_layout = QFormLayout()
+        self.form_layout.addRow(QLabel("First Name: "), self.firstname)
+        self.form_layout.addRow(QLabel("Last Name: "), self.lastname)
+        self.form_layout.addRow(QLabel("Username: "), self.username)
+        self.form_layout.addRow(QLabel("User Type: "), self.user_type_dropdown)
+        self.form_layout.addRow(QLabel("Password: "), self.password)
+        self.form_layout.addRow(QLabel("Confirm Password: "), self.confirmpassword)
+
+        self.form_layout.addRow(QLabel("Phone: "), self.phone)
+        self.form_layout.addRow(QLabel("Address: "), self.address)
+        self.form_layout.addRow(QLabel("City: "), self.city)
+        self.form_layout.addRow(QLabel("State: "), self.state_dropdown)
+        self.form_layout.addRow(QLabel("Zipcode: "), self.zipcode)
+
+        self.form_group_box.setLayout(self.form_layout)
+
+
+
+
+        self.email_box = EmailBox(self)
+
+        self.buttonBack = QPushButton('Back', self)
+        self.buttonRegister = QPushButton('Register', self)
+        self.buttonBack.clicked.connect(self.handleBack)
+        self.buttonRegister.clicked.connect(self.handleRegister)
+        self.buttonRegister.setDefault(True)
+
+        self.form_group_box3 = QGroupBox()
+        self.form_layout3 = QFormLayout()
+        self.form_layout3.addRow(self.buttonRegister, self.buttonBack)
+        self.form_group_box3.setLayout(self.form_layout3)
+
+        self.vbox = QVBoxLayout()
+        self.vbox.addWidget(self.form_group_box)
+        self.vbox.addWidget(self.email_box)
+
+        self.vbox.addWidget(self.form_group_box3)
+
+        self.setLayout(self.vbox)
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+    def handleRegister(self):
+        firstname = self.firstname.text()
+        lastname = self.lastname.text()
+        username = self.username.text()
+        user_type = self.user_type_dropdown.currentText()
+        password = self.password.text()
+        confirmpassword = self.confirmpassword.text()
+        phone = self.phone.text()
+        address = self.address.text()
+        city = self.city.text()
+        state = self.state_dropdown.currentText()
+        zipcode = self.zipcode.text()
+
+        username_list = load_db_usernames()
+        email_list = load_db_emails()
+
+
+        if (username == '' \
+            or password == ''
+            or firstname == '' \
+            or lastname == '' \
+            or confirmpassword == '' \
+            or (len(self.email_box.email_list)) == 0 and self.email_box.email_input.text() == '') \
+            or user_type == 'Select User Type' \
+            or phone == '' \
+            or address == '' \
+            or city == '' \
+            or state == 'Select State' \
+            or zipcode == '':
+            QMessageBox.warning(
+                self, 'Error', 'Please fill in all fields')
+        elif (username in username_list):
+            QMessageBox.warning(
+                self, 'Error', 'The username provided is already an existing user')
+        elif (password != confirmpassword):
+            QMessageBox.warning(
+                self, 'Error', 'The password and confirm password fields must match exactly')
+        elif (len(phone) != 10):
+            QMessageBox.warning(
+                self, 'Error', 'Please provide a valid 10 digit phone number')
+        elif (len(zipcode) != 5):
+            QMessageBox.warning(
+                self, 'Error', 'Please provide a valid 5 digit zip code')
+        else:
+            cursor = connection.cursor()
+            query = f"insert into user values ('{username}', 'User'," \
+                + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
+            cursor.execute(query)
+
+            for x in self.email_box.email_list:
+
+                query2 = f"insert into email values ('{username}', '{x}');"
+                cursor.execute(query2)
+
+            if (self.email_box.email_input.text() != '' \
+                and self.email_box.email_input.text() != ' ' \
+                and self.email_box.email_input.text() not in self.email_box.email_list):
+
+                query3 = f"insert into email values ('{username}', " \
+                    + f"'{self.email_box.email_input.text()}');"
+
+                cursor.execute(query3)
+
+            query4 = f"insert into employee (username, phone, address, city, state, zipcode, employee_type)" \
+                    + f"values ('{username}', '{phone}', '{address}', '{city}', " \
+                    + f"'{state}', '{zipcode}', '{user_type}');"
+
+            print(query4)
+
+            cursor.execute(query4)
+
+            query5 = f"insert into visitor_list values ('{username}')"
+            cursor.execute(query5)
+
+
+            connection.commit()
+            cursor.close()
+            print("succesful registration")
+
+            QMessageBox.information(self, 'PyQt5 message', "Your registration was a success!", QMessageBox.Ok)
+
+            self.close()
+            self.parent.back()
+
+
+
+
+
 class RegisterEmployee(QWidget):
     def __init__(self, parent):
         super(RegisterEmployee, self).__init__()
@@ -279,8 +507,8 @@ class RegisterVisitor(QWidget):
                 and self.email_box.email_input.text() != ' ' \
                 and self.email_box.email_input.text() not in self.email_box.email_list):
 
-                query3 = f"insert into email values ('{username}, " \
-                    + f"{self.email_box.email_input.text()});"
+                query3 = f"insert into email values ('{username}', " \
+                    + f"'{self.email_box.email_input.text()}');"
                 cursor.execute(query3)
 
             query4 = f"insert into visitor_list values ('{username}')"
@@ -383,8 +611,8 @@ class RegisterUser(QWidget):
                 and self.email_box.email_input.text() != ' ' \
                 and self.email_box.email_input.text() not in self.email_box.email_list):
 
-                query3 = f"insert into email values ('{username}, " \
-                    + f"{self.email_box.email_input.text()});"
+                query3 = f"insert into email values ('{username}', " \
+                    + f"'{self.email_box.email_input.text()}');"
                 cursor.execute(query3)
 
             connection.commit()
@@ -561,7 +789,10 @@ class RegisterNavigation(QWidget):
         self.register_employee.raise_()
 
     def register_emp_visitor(self):
-        print("register employee visitor")
+        self.hide()
+        self.register_emp_visitor = RegisterEmpVisitor(self)
+        self.register_emp_visitor.show()
+        self.register_emp_visitor.raise_()
 
     def back(self):
         self.close()
@@ -614,14 +845,69 @@ class UserLogin(QWidget):
             QMessageBox.warning(
                 self, 'Error', 'The password provided is incorrect')
         else:
-            print("login success")
-            self.close()
+
+            cursor = connection.cursor()
+            query = 'select status from email join user ' \
+                + f"using (username) where email = '{email}';"
+            print(query)
+            cursor.execute(query)
+            user_data = [line for line in cursor]
+            status = user_data[0]['status']
+            if (status == 'Pending'):
+                QMessageBox.warning(
+                    self, 'Error', 'Your account registration is currently pending appoval')
+            elif (status == 'Declined'):
+                QMessageBox.warning(
+                    self, 'Error', 'Your account registration has been declined approval')
+            else:
+                print("login success")
+                # self.close()
+                self.functionality(email)
 
 
     def handleRegister(self):
         self.hide()
         self.register_nav = RegisterNavigation(self)
         self.register_nav.show()
+
+    def functionality(self, email):
+
+        cursor = connection.cursor()
+        query = 'select user_type from email join user ' \
+            + f"using (username) where email = '{email}';"
+        # print(query)
+        cursor.execute(query)
+
+        user_data = [line for line in cursor]
+        cursor.close()
+        user_type = user_data[0]['user_type']
+        if user_type == 'User':
+            print('user functionality')
+        elif user_type == 'Visitor':
+            print ('visitor functionality')
+        elif user_type == 'Employee':
+            cursor = connection.cursor()
+            query2 = 'select employee_type from employee join email' \
+                + f" using (username) where email = '{email}';"
+            cursor.execute(query2)
+            user_data = [line for line in cursor]
+            cursor.close()
+            emp_type = user_data[0]["employee_type"]
+            if (emp_type == 'Admin'):
+                print("admin functionality")
+                self.hide()
+                self.admin_func = AdminFunctionality(self)
+                self.admin_func.show()
+            elif (emp_type == 'Manager'):
+                pass
+            elif (emp_type == 'Staff'):
+                pass
+
+
+        # self.hide()
+        # self.register_emp_visitor = RegisterEmpVisitor(self)
+        # self.register_emp_visitor.show()
+        # self.register_emp_visitor.raise_()
 
 
 
