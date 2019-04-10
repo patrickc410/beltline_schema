@@ -34,6 +34,476 @@ from PyQt5.QtGui import (
     QPixmap)
 
 
+# SCREEN NUMBER 14
+class VisitorFunctionality(QWidget):
+    def __init__(self, parent):
+        super(VisitorFunctionality, self).__init__()
+        self.setWindowTitle("Visitor Functionality")
+
+        self.parent = parent
+        self.vbox = QVBoxLayout()
+
+        self.take_transit_btn = QPushButton('Take Transit', self)
+        self.take_transit_btn.clicked.connect(self.handleTakeTransit)
+
+        self.view_transit_hist_btn = QPushButton('View Transit History', self)
+        self.view_transit_hist_btn.clicked.connect(self.handleViewTransitHistory)
+
+        self.explore_site_btn = QPushButton('Explore Site', self)
+        self.explore_site_btn.clicked.connect(self.handleExploreSite)
+
+        self.explore_event_btn = QPushButton('Explore Event', self)
+        self.explore_event_btn.clicked.connect(self.handleExploreEvent)
+
+        self.view_visit_hist_btn = QPushButton('View Visit History', self)
+        self.view_visit_hist_btn.clicked.connect(self.handleViewVisitHistory)
+
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+
+        self.vbox.addWidget(self.take_transit_btn) #1
+        self.vbox.addWidget(self.view_transit_hist_btn)
+        self.vbox.addWidget(self.explore_site_btn) #3
+        self.vbox.addWidget(self.explore_event_btn)
+        self.vbox.addWidget(self.view_visit_hist_btn) #5
+        self.vbox.addWidget(self.back_btn) #6
+
+        self.setLayout(self.vbox)
+
+
+    def handleTakeTransit(self):
+        pass
+
+    def handleViewTransitHistory(self):
+        pass
+
+    def handleExploreSite(self):
+        pass
+
+    def handleExploreEvent(self):
+        pass
+
+    def handleViewVisitHistory(self):
+        pass
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+
+
+
+# SCREEN NUMBER 13
+class EmpVisitorFunctionality(QWidget):
+    def __init__(self, parent):
+        super(EmpVisitorFunctionality, self).__init__()
+        self.setWindowTitle("Employee-Visitor Functionality")
+
+        self.parent = parent
+        self.vbox = QVBoxLayout()
+
+        self.manage_profile_btn = QPushButton('Manage Profile', self)
+        self.manage_profile_btn.clicked.connect(self.handleManageProfile)
+
+        self.view_schedule_btn = QPushButton('View Schedule', self)
+        self.view_schedule_btn.clicked.connect(self.handleViewSchedule)
+
+        self.take_transit_btn = QPushButton('Take Transit', self)
+        self.take_transit_btn.clicked.connect(self.handleTakeTransit)
+
+        self.view_transit_hist_btn = QPushButton('View Transit History', self)
+        self.view_transit_hist_btn.clicked.connect(self.handleViewTransitHistory)
+
+        self.explore_site_btn = QPushButton('Explore Site', self)
+        self.explore_site_btn.clicked.connect(self.handleExploreSite)
+
+        self.explore_event_btn = QPushButton('Explore Event', self)
+        self.explore_event_btn.clicked.connect(self.handleExploreEvent)
+
+        self.view_visit_hist_btn = QPushButton('View Visit History', self)
+        self.view_visit_hist_btn.clicked.connect(self.handleViewVisitHistory)
+
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+
+        self.vbox.addWidget(self.manage_profile_btn) #1
+        self.vbox.addWidget(self.view_schedule_btn)
+        self.vbox.addWidget(self.take_transit_btn)
+        self.vbox.addWidget(self.view_transit_hist_btn)
+        self.vbox.addWidget(self.explore_site_btn) #5
+        self.vbox.addWidget(self.explore_event_btn)
+        self.vbox.addWidget(self.view_visit_hist_btn)
+        self.vbox.addWidget(self.back_btn) #8
+
+        self.setLayout(self.vbox)
+
+
+    def handleManageProfile(self):
+        pass
+
+    def handleViewSchedule(self):
+        pass
+
+    def handleTakeTransit(self):
+        pass
+
+    def handleViewTransitHistory(self):
+        pass
+
+    def handleExploreSite(self):
+        pass
+
+    def handleExploreEvent(self):
+        pass
+
+    def handleViewVisitHistory(self):
+        pass
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+
+
+
+
+# SCREEN NUMBER 12
+class EmpFunctionality(QWidget):
+    def __init__(self, parent):
+        super(EmpFunctionality, self).__init__()
+        self.setWindowTitle("Employee Functionality")
+
+        self.parent = parent
+        self.vbox = QVBoxLayout()
+
+        self.manage_profile_btn = QPushButton('Manage Profile', self)
+        self.manage_profile_btn.clicked.connect(self.handleManageProfile)
+
+        self.view_schedule_btn = QPushButton('View Schedule', self)
+        self.view_schedule_btn.clicked.connect(self.handleViewSchedule)
+
+        self.take_transit_btn = QPushButton('Take Transit', self)
+        self.take_transit_btn.clicked.connect(self.handleTakeTransit)
+
+        self.view_transit_hist_btn = QPushButton('View Transit History', self)
+        self.view_transit_hist_btn.clicked.connect(self.handleViewTransitHistory)
+
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+
+        self.vbox.addWidget(self.manage_profile_btn)
+        self.vbox.addWidget(self.view_schedule_btn)
+        self.vbox.addWidget(self.take_transit_btn)
+        self.vbox.addWidget(self.view_transit_hist_btn)
+        self.vbox.addWidget(self.back_btn)
+
+        self.setLayout(self.vbox)
+
+
+    def handleManageProfile(self):
+        pass
+
+    def handleViewSchedule(self):
+        pass
+
+    def handleTakeTransit(self):
+        pass
+
+    def handleViewTransitHistory(self):
+        pass
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+
+
+# SCREEN NUMBER 10
+class ManagerFunctionality(QWidget):
+    def __init__(self, parent):
+        super(ManagerFunctionality, self).__init__()
+        self.setWindowTitle("Manager Functionality")
+
+        self.parent = parent
+        self.vbox = QVBoxLayout()
+
+        self.manage_profile_btn = QPushButton('Manage Profile', self)
+        self.manage_profile_btn.clicked.connect(self.handleManageProfile)
+
+        self.manage_event_btn = QPushButton('Manage Event', self)
+        self.manage_event_btn.clicked.connect(self.handleManageEvent)
+
+        self.view_staff_btn = QPushButton('View Staff', self)
+        self.view_staff_btn.clicked.connect(self.handleViewStaff)
+
+        self.view_site_report_btn = QPushButton('View Site Report', self)
+        self.view_site_report_btn.clicked.connect(self.handleViewSiteReport)
+
+        self.take_transit_btn = QPushButton('Take Transit', self)
+        self.take_transit_btn.clicked.connect(self.handleTakeTransit)
+
+        self.view_transit_hist_btn = QPushButton('View Transit History', self)
+        self.view_transit_hist_btn.clicked.connect(self.handleViewTransitHistory)
+
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+
+        self.vbox.addWidget(self.manage_profile_btn) #1
+        self.vbox.addWidget(self.manage_event_btn)
+        self.vbox.addWidget(self.view_staff_btn)
+        self.vbox.addWidget(self.view_site_report_btn)
+        self.vbox.addWidget(self.take_transit_btn) #5
+        self.vbox.addWidget(self.view_transit_hist_btn)
+        self.vbox.addWidget(self.back_btn) #7
+
+        self.setLayout(self.vbox)
+
+
+    def handleManageProfile(self):
+        pass
+
+    def handleManageEvent(self):
+        pass
+
+    def handleViewStaff(self):
+        pass
+
+    def handleViewSiteReport(self):
+        pass
+
+    def handleTakeTransit(self):
+        pass
+
+    def handleExploreSite(self):
+        pass
+
+    def handleExploreEvent(self):
+        pass
+
+    def handleViewTransitHistory(self):
+        pass
+
+    def handleViewVisitHistory(self):
+        pass
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+
+
+
+# SCREEN NUMBER 11
+class ManagerVisitorFunctionality(QWidget):
+    def __init__(self, parent):
+        super(ManagerVisitorFunctionality, self).__init__()
+        self.setWindowTitle("Manager-Visitor Functionality")
+
+        self.parent = parent
+        self.vbox = QVBoxLayout()
+
+        self.manage_profile_btn = QPushButton('Manage Profile', self)
+        self.manage_profile_btn.clicked.connect(self.handleManageProfile)
+
+        self.manage_event_btn = QPushButton('Manage Event', self)
+        self.manage_event_btn.clicked.connect(self.handleManageEvent)
+
+        self.view_staff_btn = QPushButton('View Staff', self)
+        self.view_staff_btn.clicked.connect(self.handleViewStaff)
+
+        self.view_site_report_btn = QPushButton('View Site Report', self)
+        self.view_site_report_btn.clicked.connect(self.handleViewSiteReport)
+
+        self.explore_site_btn = QPushButton('Explore Site', self)
+        self.explore_site_btn.clicked.connect(self.handleExploreSite)
+
+        self.explore_event_btn = QPushButton('Explore Event', self)
+        self.explore_event_btn.clicked.connect(self.handleExploreEvent)
+
+        self.take_transit_btn = QPushButton('Take Transit', self)
+        self.take_transit_btn.clicked.connect(self.handleTakeTransit)
+
+        self.view_transit_hist_btn = QPushButton('View Transit History', self)
+        self.view_transit_hist_btn.clicked.connect(self.handleViewTransitHistory)
+
+        self.view_visit_hist_btn = QPushButton('View Visit History', self)
+        self.view_visit_hist_btn.clicked.connect(self.handleViewVisitHistory)
+
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+
+        self.vbox.addWidget(self.manage_profile_btn) #1
+        self.vbox.addWidget(self.manage_event_btn)
+        self.vbox.addWidget(self.view_staff_btn)
+        self.vbox.addWidget(self.view_site_report_btn)
+        self.vbox.addWidget(self.explore_site_btn) #5
+        self.vbox.addWidget(self.explore_event_btn)
+        self.vbox.addWidget(self.take_transit_btn)
+        self.vbox.addWidget(self.view_transit_hist_btn)
+        self.vbox.addWidget(self.view_visit_hist_btn)
+        self.vbox.addWidget(self.back_btn) #10
+
+        self.setLayout(self.vbox)
+
+
+    def handleManageProfile(self):
+        pass
+
+    def handleManageEvent(self):
+        pass
+
+    def handleViewStaff(self):
+        pass
+
+    def handleViewSiteReport(self):
+        pass
+
+    def handleTakeTransit(self):
+        pass
+
+    def handleExploreSite(self):
+        pass
+
+    def handleExploreEvent(self):
+        pass
+
+    def handleViewTransitHistory(self):
+        pass
+
+    def handleViewVisitHistory(self):
+        pass
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+
+
+
+
+# SCREEN NUMBER 7
+class UserFunctionality(QWidget):
+    def __init__(self, parent):
+        super(UserFunctionality, self).__init__()
+        self.setWindowTitle("User Functionality")
+
+        self.parent = parent
+        self.vbox = QVBoxLayout()
+
+        self.take_transit_btn = QPushButton('Take Transit', self)
+        self.take_transit_btn.clicked.connect(self.handleTakeTransit)
+
+        self.view_transit_hist_btn = QPushButton('View Transit History', self)
+        self.view_transit_hist_btn.clicked.connect(self.handleViewTransitHistory)
+
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+
+        self.vbox.addWidget(self.take_transit_btn)
+        self.vbox.addWidget(self.view_transit_hist_btn)
+        self.vbox.addWidget(self.back_btn)
+
+        self.setLayout(self.vbox)
+
+    def handleTakeTransit(self):
+        pass
+
+    def handleViewTransitHistory(self):
+        pass
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+
+# SCREEN NUMBER 9
+class AdminVisitorFunctionality(QWidget):
+    def __init__(self, parent):
+        super(AdminVisitorFunctionality, self).__init__()
+        self.setWindowTitle("Administrator-Visitor Functionality")
+
+        self.parent = parent
+        self.vbox = QVBoxLayout()
+
+        self.manage_profile_btn = QPushButton('Manage Profile', self)
+        self.manage_profile_btn.clicked.connect(self.handleManageProfile)
+
+        self.manage_user_btn = QPushButton('Manage User', self)
+        self.manage_user_btn.clicked.connect(self.handleManageUser)
+
+        self.manage_transit_btn = QPushButton('Manage Transit', self)
+        self.manage_transit_btn.clicked.connect(self.handleManageTransit)
+
+        self.manage_site_btn = QPushButton('Manage Site', self)
+        self.manage_site_btn.clicked.connect(self.handleManageSite)
+
+        self.take_transit_btn = QPushButton('Take Transit', self)
+        self.take_transit_btn.clicked.connect(self.handleTakeTransit)
+
+        self.explore_site_btn = QPushButton('Explore Site', self)
+        self.explore_site_btn.clicked.connect(self.handleExploreSite)
+
+        self.explore_event_btn = QPushButton('Explore Event', self)
+        self.explore_event_btn.clicked.connect(self.handleExploreEvent)
+
+        self.view_transit_hist_btn = QPushButton('View Transit History', self)
+        self.view_transit_hist_btn.clicked.connect(self.handleViewTransitHistory)
+
+        self.view_visit_hist_btn = QPushButton('View Visit History', self)
+        self.view_visit_hist_btn.clicked.connect(self.handleViewVisitHistory)
+
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+
+        self.vbox.addWidget(self.manage_profile_btn)
+        self.vbox.addWidget(self.manage_user_btn)
+        self.vbox.addWidget(self.manage_transit_btn)
+        self.vbox.addWidget(self.manage_site_btn)
+        self.vbox.addWidget(self.take_transit_btn)
+        self.vbox.addWidget(self.explore_site_btn)
+        self.vbox.addWidget(self.explore_event_btn)
+        self.vbox.addWidget(self.view_transit_hist_btn)
+        self.vbox.addWidget(self.view_visit_hist_btn)
+        self.vbox.addWidget(self.back_btn)
+
+        self.setLayout(self.vbox)
+
+
+    def handleManageProfile(self):
+        pass
+
+    def handleManageUser(self):
+        pass
+
+    def handleManageTransit(self):
+        pass
+
+    def handleManageSite(self):
+        pass
+
+    def handleTakeTransit(self):
+        pass
+
+    def handleExploreSite(self):
+        pass
+
+    def handleExploreEvent(self):
+        pass
+
+    def handleViewTransitHistory(self):
+        pass
+
+    def handleViewVisitHistory(self):
+        pass
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+
+
+
+# SCREEN NUMBER 8
 class AdminFunctionality(QWidget):
     def __init__(self, parent):
         super(AdminFunctionality, self).__init__()
@@ -837,10 +1307,10 @@ class UserLogin(QWidget):
 
         if (email == '' or password == ''):
             QMessageBox.warning(
-                self, 'Error', 'Please fill in both the username and the password fields')
+                self, 'Error', 'Please fill in both the email and the password fields')
         elif (email not in login_dict.keys()):
             QMessageBox.warning(
-                self, 'Error', 'The username provided is not an existing user')
+                self, 'Error', 'The email provided is not linked to an existing user')
         elif (login_dict[email] != password):
             QMessageBox.warning(
                 self, 'Error', 'The password provided is incorrect')
@@ -882,9 +1352,15 @@ class UserLogin(QWidget):
         cursor.close()
         user_type = user_data[0]['user_type']
         if user_type == 'User':
-            print('user functionality')
+            # print('user functionality')
+            self.hide()
+            self.user_func = UserFunctionality(self)
+            self.user_func.show()
         elif user_type == 'Visitor':
-            print ('visitor functionality')
+            # print ('visitor functionality')
+            self.hide()
+            self.visitor_func = VisitorFunctionality(self)
+            self.visitor_func.show()
         elif user_type == 'Employee':
             cursor = connection.cursor()
             query2 = 'select employee_type from employee join email' \
@@ -893,29 +1369,52 @@ class UserLogin(QWidget):
             user_data = [line for line in cursor]
             cursor.close()
             emp_type = user_data[0]["employee_type"]
-            if (emp_type == 'Admin'):
+
+            cursor = connection.cursor()
+            query3 = 'select username from visitor_list join email ' \
+                + f" using (username) where email = '{email}';"
+            # print(query3)
+            cursor.execute(query3)
+            user_data = [line for line in cursor]
+            cursor.close()
+            visitor = len(user_data)
+            # print(visitor)
+
+
+            if (emp_type == 'Admin' and not visitor):
                 print("admin functionality")
                 self.hide()
                 self.admin_func = AdminFunctionality(self)
                 self.admin_func.show()
-            elif (emp_type == 'Manager'):
-                pass
-            elif (emp_type == 'Staff'):
-                pass
+            elif (emp_type == 'Admin' and visitor):
+                print("admin-visitor functionality")
+                self.hide()
+                self.admin_visitor_func = AdminVisitorFunctionality(self)
+                self.admin_visitor_func.show()
+            elif (emp_type == 'Manager' and not visitor):
+                self.hide()
+                self.manager_visitor_func = ManagerFunctionality(self)
+                self.manager_visitor_func.show()
+            elif (emp_type == 'Manager' and visitor):
+                self.hide()
+                self.manager_visitor_func = ManagerVisitorFunctionality(self)
+                self.manager_visitor_func.show()
+            elif (emp_type == 'Staff' and not visitor):
+                self.hide()
+                self.emp_func = EmpFunctionality(self)
+                self.emp_func.show()
+            elif (emp_type == 'Staff' and visitor):
+                self.hide()
+                self.emp_visitor_func = EmpVisitorFunctionality(self)
+                self.emp_visitor_func.show()
 
 
-        # self.hide()
-        # self.register_emp_visitor = RegisterEmpVisitor(self)
-        # self.register_emp_visitor.show()
-        # self.register_emp_visitor.raise_()
 
 
 
-
-
-class Window(QMainWindow):
-    def __init__(self, parent=None):
-        super(Window, self).__init__(parent)
+# class Window(QMainWindow):
+#     def __init__(self, parent=None):
+#         super(Window, self).__init__(parent)
         # self.ui = Ui_MainWindow()
         # self.ui.setupUi(self)
 
