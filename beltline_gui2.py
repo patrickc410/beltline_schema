@@ -34,12 +34,285 @@ from PyQt5.QtGui import (
     QPixmap)
 
 
+class SimpleTableModel(QAbstractTableModel):
+
+    def __init__(self, headers, rows):
+        QAbstractTableModel.__init__(self, None)
+        self.data = rows
+        self.headers = headers
+        self.rows = rows
+
+    def rowCount(self, parent):
+        return len(self.rows)
+
+    def columnCount(self, parent):
+        return len(self.headers)
+
+    def data(self, index, role):
+        if (not index.isValid()) or (role != Qt.DisplayRole):
+            return QVariant()
+        else:
+            return QVariant(self.rows[index.row()][index.column()])
+
+    def row(self, index):
+        return self.data[index]
+
+    def headerData(self, section, orientation, role):
+        if role != Qt.DisplayRole:
+            return QVariant()
+        elif orientation == Qt.Vertical:
+            return section + 1
+        else:
+            return self.headers[section]
+
+    def editData(self, data):
+        self.rows = data
+        self.data = data
+
+
+
+
+# SCREEN NUMBER 15
+class UserTakeTransit(QWidget):
+    def __init__(self, parent, username):
+        super(UserTakeTransit, self).__init__()
+        self.setWindowTitle("Take Transit")
+
+        self.username = username
+        self.parent = parent
+
+        self.vbox = QVBoxLayout()
+
+        self.hbox1 = QHBoxLayout()
+        self.hbox2 = QHBoxLayout()
+        self.hbox3 = QHBoxLayout()
+
+        site_name_list = create_site_name_list()
+
+        self.contain_site_label = QLabel("Contain Site: ")
+        self.contain_site_dropdown = QComboBox(self)
+        self.contain_site_dropdown.addItems(site_name_list)
+        self.hbox1.addWidget(self.contain_site_label)
+        self.hbox1.addWidget(self.contain_site_dropdown)
+
+        self.transport_type_label = QLabel("Transport Type: ")
+        self.transport_type_dropdown = QComboBox(self)
+        self.transport_type_dropdown.addItems(["--ALL--", "MARTA", "Bus", "Bike"])
+        self.hbox2.addWidget(self.transport_type_label)
+        self.hbox2.addWidget(self.transport_type_dropdown)
+
+        self.price_range_label = QLabel("Price Range: ")
+        self.lower_price_bound = QLineEdit(self)
+        self.dash_label = QLabel(" -- ")
+        self.upper_price_bound = QLineEdit(self)
+        self.hbox3.addWidget(self.price_range_label)
+        self.hbox3.addWidget(self.lower_price_bound)
+        self.hbox3.addWidget(self.dash_label)
+        self.hbox3.addWidget(self.upper_price_bound)
+
+
+        self.filter_btn = QPushButton('Filter', self)
+        self.filter_btn.clicked.connect(self.handleFilter)
+
+
+        self.vbox.addLayout(self.hbox1)
+        self.vbox.addLayout(self.hbox2)
+        self.vbox.addLayout(self.hbox3)
+        self.vbox.addWidget(self.filter_btn)
+
+
+        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites"], [["", "", "", ""]])
+        self.table_view = QTableView()
+        self.table_view.setModel(self.table_model)
+        self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
+        self.vbox.addWidget(self.table_view)
+
+
+        self.hbox4 = QHBoxLayout()
+        self.transit_date_label = QLabel("Transit Date: ")
+        self.transit_date = QLineEdit(self)
+        self.log_transit_btn = QPushButton('Log Transit', self)
+        self.log_transit_btn.clicked.connect(self.handleLogTransit)
+        self.hbox4.addWidget(self.transit_date_label)
+        self.hbox4.addWidget(self.transit_date)
+        self.hbox4.addWidget(self.log_transit_btn)
+        self.vbox.addLayout(self.hbox4)
+
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+        self.vbox.addWidget(self.back_btn)
+
+        self.setLayout(self.vbox)
+
+
+    def handleFilter(self):
+
+        transit_type = self.transport_type_dropdown.currentText()
+        contain_site = self.contain_site_dropdown.currentText()
+        lower_price_bound = self.lower_price_bound.text()
+        upper_price_bound = self.upper_price_bound.text()
+
+        table_data = []
+        cursor = connection.cursor()
+
+        transit_type_filter = True
+        lower_price_bound_filter = True
+        upper_price_bound_filter = True
+        query = ''
+
+        if (transit_type == '--ALL--'):
+            transit_type_filter = False
+
+        if (lower_price_bound == ''):
+            lower_price_bound_filter = False
+
+        if (upper_price_bound == ''):
+            upper_price_bound_filter = False
+
+        if (not lower_price_bound_filter and not upper_price_bound_filter):
+            if (not transit_type_filter):
+                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
+                    + "where transit_connections.route = transit.route " \
+                    + "and transit_connections.transit_type = transit.type " \
+                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
+                    + "group by transit.route, transit.type;"
+            else:
+                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
+                    + "where transit_connections.route = transit.route " \
+                    + "and transit_connections.transit_type = transit.type " \
+                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
+                    + f"and type = '{transit_type}' " \
+                    + "group by transit.route, transit.type;"
+        elif (lower_price_bound_filter):
+            if (not transit_type_filter):
+                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
+                    + "where transit_connections.route = transit.route " \
+                    + "and transit_connections.transit_type = transit.type " \
+                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
+                    + f"and price > {float(lower_price_bound)} " \
+                    + "group by transit.route, transit.type;"
+            else:
+                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
+                    + "where transit_connections.route = transit.route " \
+                    + "and transit_connections.transit_type = transit.type " \
+                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
+                    + f"and type = '{transit_type}' " \
+                    + f"and price > {float(lower_price_bound)} " \
+                    + "group by transit.route, transit.type;"
+        elif (upper_price_bound_filter):
+            if (not transit_type_filter):
+                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
+                    + "where transit_connections.route = transit.route " \
+                    + "and transit_connections.transit_type = transit.type " \
+                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
+                    + f"and price < {float(upper_price_bound)} " \
+                    + "group by transit.route, transit.type;"
+            else:
+                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
+                    + "where transit_connections.route = transit.route " \
+                    + "and transit_connections.transit_type = transit.type " \
+                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
+                    + f"and type = '{transit_type}' " \
+                    + f"and price < {float(upper_price_bound)} " \
+                    + "group by transit.route, transit.type;"
+        else:
+            if (not transit_type_filter):
+                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
+                    + "where transit_connections.route = transit.route " \
+                    + "and transit_connections.transit_type = transit.type " \
+                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
+                    + f"and price between {float(lower_price_bound)} and {float(upper_price_bound)} " \
+                    + "group by transit.route, transit.type;"
+            else:
+                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
+                    + "where transit_connections.route = transit.route " \
+                    + "and transit_connections.transit_type = transit.type " \
+                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
+                    + f"and type = '{transit_type}' " \
+                    + f"and price between {float(lower_price_bound)} and {float(upper_price_bound)} " \
+                    + "group by transit.route, transit.type;"
+
+
+        # print(query)
+        cursor.execute(query)
+        transit_data = [line for line in cursor]
+        for i in transit_data:
+            table_data.append([i["route"], i["type"], str(i["price"]), i["# Connected Sites"]])
+
+        self.hide()
+        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites"], table_data)
+        self.table_view.setModel(self.table_model)
+        self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
+
+        self.show()
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+    def handleLogTransit(self):
+        row_index = self.table_view.currentIndex().row()
+        transit_date = self.transit_date.text()
+        date_pattern = r'[\d]{4}-[0,1][\d]{1}-[0,1,2,3][\d]{1}'
+        date_check = re.fullmatch(date_pattern, transit_date)
+        route = self.table_model.data[row_index][0]
+        transit_type = self.table_model.data[row_index][1]
+        query_check = "select exists (select username " \
+            + "from take_transit " \
+            + f"where username = '{self.username}' " \
+            + f"and transit_type = '{transit_type}' " \
+            + f"and route = '{route}' " \
+            + f"and take_date = '{transit_date}')"
+        cursor = connection.cursor()
+        cursor.execute(query_check)
+        same_day_check = [line for line in cursor]
+        same_day = list(same_day_check[0].values())[0]
+        print(same_day)
+        # print(same_day_check)
+
+        cursor.close()
+        if (row_index == -1):
+            QMessageBox.warning(
+                self, 'Error', 'Please select a row of the table')
+        elif (date_check == None):
+            QMessageBox.warning(
+                self, 'Error', 'Please enter a valid date in the form YYYY-MM-DD')
+        elif (same_day):
+            QMessageBox.warning(
+                self, 'Error', 'You cannot take the same transit twice in one day')
+        else:
+
+            query = "insert into take_transit " \
+                + "(username, transit_type, route, take_date) " \
+                + f"values ('{self.username}', '{transit_type}', '{route}', '{transit_date}');"
+            cursor = connection.cursor()
+            cursor.execute(query)
+            connection.commit()
+            cursor.close()
+            QMessageBox.information(self, 'PyQt5 message', "You successfully logged your journey!", QMessageBox.Ok)
+
+
+
+
+def create_site_name_list():
+
+    site_name_list = []
+    cursor = connection.cursor()
+    cursor.execute("select name from site;")
+    site_data = [line for line in cursor]
+    for i in site_data:
+        site_name_list.append(i["name"])
+    return site_name_list
+
+
+
 # SCREEN NUMBER 14
 class VisitorFunctionality(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, username):
         super(VisitorFunctionality, self).__init__()
         self.setWindowTitle("Visitor Functionality")
 
+        self.username = username
         self.parent = parent
         self.vbox = QVBoxLayout()
 
@@ -72,7 +345,10 @@ class VisitorFunctionality(QWidget):
 
 
     def handleTakeTransit(self):
-        pass
+        self.hide()
+        self.user_take_transit = UserTakeTransit(self, self.username)
+        self.user_take_transit.show()
+        self.user_take_transit.raise_()
 
     def handleViewTransitHistory(self):
         pass
@@ -95,10 +371,11 @@ class VisitorFunctionality(QWidget):
 
 # SCREEN NUMBER 13
 class EmpVisitorFunctionality(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, username):
         super(EmpVisitorFunctionality, self).__init__()
         self.setWindowTitle("Employee-Visitor Functionality")
 
+        self.username = username
         self.parent = parent
         self.vbox = QVBoxLayout()
 
@@ -145,7 +422,10 @@ class EmpVisitorFunctionality(QWidget):
         pass
 
     def handleTakeTransit(self):
-        pass
+        self.hide()
+        self.user_take_transit = UserTakeTransit(self, self.username)
+        self.user_take_transit.show()
+        self.user_take_transit.raise_()
 
     def handleViewTransitHistory(self):
         pass
@@ -169,10 +449,11 @@ class EmpVisitorFunctionality(QWidget):
 
 # SCREEN NUMBER 12
 class EmpFunctionality(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, username):
         super(EmpFunctionality, self).__init__()
         self.setWindowTitle("Employee Functionality")
 
+        self.username = username
         self.parent = parent
         self.vbox = QVBoxLayout()
 
@@ -207,7 +488,10 @@ class EmpFunctionality(QWidget):
         pass
 
     def handleTakeTransit(self):
-        pass
+        self.hide()
+        self.user_take_transit = UserTakeTransit(self, self.username)
+        self.user_take_transit.show()
+        self.user_take_transit.raise_()
 
     def handleViewTransitHistory(self):
         pass
@@ -220,10 +504,11 @@ class EmpFunctionality(QWidget):
 
 # SCREEN NUMBER 10
 class ManagerFunctionality(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, username):
         super(ManagerFunctionality, self).__init__()
         self.setWindowTitle("Manager Functionality")
 
+        self.username = username
         self.parent = parent
         self.vbox = QVBoxLayout()
 
@@ -272,7 +557,10 @@ class ManagerFunctionality(QWidget):
         pass
 
     def handleTakeTransit(self):
-        pass
+        self.hide()
+        self.user_take_transit = UserTakeTransit(self, self.username)
+        self.user_take_transit.show()
+        self.user_take_transit.raise_()
 
     def handleExploreSite(self):
         pass
@@ -295,10 +583,11 @@ class ManagerFunctionality(QWidget):
 
 # SCREEN NUMBER 11
 class ManagerVisitorFunctionality(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, username):
         super(ManagerVisitorFunctionality, self).__init__()
         self.setWindowTitle("Manager-Visitor Functionality")
 
+        self.username = username
         self.parent = parent
         self.vbox = QVBoxLayout()
 
@@ -359,7 +648,10 @@ class ManagerVisitorFunctionality(QWidget):
         pass
 
     def handleTakeTransit(self):
-        pass
+        self.hide()
+        self.user_take_transit = UserTakeTransit(self, self.username)
+        self.user_take_transit.show()
+        self.user_take_transit.raise_()
 
     def handleExploreSite(self):
         pass
@@ -383,10 +675,11 @@ class ManagerVisitorFunctionality(QWidget):
 
 # SCREEN NUMBER 7
 class UserFunctionality(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, username):
         super(UserFunctionality, self).__init__()
         self.setWindowTitle("User Functionality")
 
+        self.username = username
         self.parent = parent
         self.vbox = QVBoxLayout()
 
@@ -406,7 +699,10 @@ class UserFunctionality(QWidget):
         self.setLayout(self.vbox)
 
     def handleTakeTransit(self):
-        pass
+        self.hide()
+        self.user_take_transit = UserTakeTransit(self, self.username)
+        self.user_take_transit.show()
+        self.user_take_transit.raise_()
 
     def handleViewTransitHistory(self):
         pass
@@ -418,10 +714,11 @@ class UserFunctionality(QWidget):
 
 # SCREEN NUMBER 9
 class AdminVisitorFunctionality(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, username):
         super(AdminVisitorFunctionality, self).__init__()
         self.setWindowTitle("Administrator-Visitor Functionality")
 
+        self.username = username
         self.parent = parent
         self.vbox = QVBoxLayout()
 
@@ -482,7 +779,10 @@ class AdminVisitorFunctionality(QWidget):
         pass
 
     def handleTakeTransit(self):
-        pass
+        self.hide()
+        self.user_take_transit = UserTakeTransit(self, self.username)
+        self.user_take_transit.show()
+        self.user_take_transit.raise_()
 
     def handleExploreSite(self):
         pass
@@ -505,10 +805,11 @@ class AdminVisitorFunctionality(QWidget):
 
 # SCREEN NUMBER 8
 class AdminFunctionality(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, username):
         super(AdminFunctionality, self).__init__()
         self.setWindowTitle("Administrator Functionality")
 
+        self.username = username
         self.parent = parent
         self.vbox = QVBoxLayout()
 
@@ -557,7 +858,10 @@ class AdminFunctionality(QWidget):
         pass
 
     def handleTakeTransit(self):
-        pass
+        self.hide()
+        self.user_take_transit = UserTakeTransit(self, self.username)
+        self.user_take_transit.show()
+        self.user_take_transit.raise_()
 
     def handleViewTransitHistory(self):
         pass
@@ -689,20 +993,20 @@ class RegisterEmpVisitor(QWidget):
                 self, 'Error', 'Please provide a valid 5 digit zip code')
         else:
             cursor = connection.cursor()
-            query = f"insert into user values ('{username}', 'User'," \
+            query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'User'," \
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
             cursor.execute(query)
 
             for x in self.email_box.email_list:
 
-                query2 = f"insert into email values ('{username}', '{x}');"
+                query2 = f"insert into email (username, email) values ('{username}', '{x}');"
                 cursor.execute(query2)
 
             if (self.email_box.email_input.text() != '' \
                 and self.email_box.email_input.text() != ' ' \
                 and self.email_box.email_input.text() not in self.email_box.email_list):
 
-                query3 = f"insert into email values ('{username}', " \
+                query3 = f"insert into email (username, email) values ('{username}', " \
                     + f"'{self.email_box.email_input.text()}');"
 
                 cursor.execute(query3)
@@ -852,20 +1156,20 @@ class RegisterEmployee(QWidget):
                 self, 'Error', 'Please provide a valid 5 digit zip code')
         else:
             cursor = connection.cursor()
-            query = f"insert into user values ('{username}', 'User'," \
+            query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'User'," \
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
             cursor.execute(query)
 
             for x in self.email_box.email_list:
 
-                query2 = f"insert into email values ('{username}', '{x}');"
+                query2 = f"insert into email (username, email) values ('{username}', '{x}');"
                 cursor.execute(query2)
 
             if (self.email_box.email_input.text() != '' \
                 and self.email_box.email_input.text() != ' ' \
                 and self.email_box.email_input.text() not in self.email_box.email_list):
 
-                query3 = f"insert into email values ('{username}', " \
+                query3 = f"insert into email (username, email) values ('{username}', " \
                     + f"'{self.email_box.email_input.text()}');"
 
                 cursor.execute(query3)
@@ -964,20 +1268,21 @@ class RegisterVisitor(QWidget):
                 self, 'Error', 'The password and confirm password fields must match exactly')
         else:
             cursor = connection.cursor()
-            query = f"insert into user values ('{username}', 'User'," \
+            query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'User'," \
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
+            print(query)
             cursor.execute(query)
 
             for x in self.email_box.email_list:
 
-                query2 = f"insert into email values ('{username}', '{x}');"
+                query2 = f"insert into email (username, email) values ('{username}', '{x}');"
                 cursor.execute(query2)
 
             if (self.email_box.email_input.text() != '' \
                 and self.email_box.email_input.text() != ' ' \
                 and self.email_box.email_input.text() not in self.email_box.email_list):
 
-                query3 = f"insert into email values ('{username}', " \
+                query3 = f"insert into email (username, email) values ('{username}', " \
                     + f"'{self.email_box.email_input.text()}');"
                 cursor.execute(query3)
 
@@ -1068,13 +1373,15 @@ class RegisterUser(QWidget):
                 self, 'Error', 'The password and confirm password fields must match exactly')
         else:
             cursor = connection.cursor()
-            query = f"insert into user values ('{username}', 'User'," \
+            query = f"insert into user (username, user_type, fname, " \
+                + "lname, status, password) " \
+                + f"values ('{username}', 'User'," \
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
             cursor.execute(query)
 
             for x in self.email_box.email_list:
 
-                query2 = f"insert into email values ('{username}', '{x}');"
+                query2 = f"insert into email (username, email) values ('{username}', '{x}');"
                 cursor.execute(query2)
 
             if (self.email_box.email_input.text() != '' \
@@ -1343,7 +1650,7 @@ class UserLogin(QWidget):
     def functionality(self, email):
 
         cursor = connection.cursor()
-        query = 'select user_type from email join user ' \
+        query = 'select username, user_type from email join user ' \
             + f"using (username) where email = '{email}';"
         # print(query)
         cursor.execute(query)
@@ -1351,15 +1658,16 @@ class UserLogin(QWidget):
         user_data = [line for line in cursor]
         cursor.close()
         user_type = user_data[0]['user_type']
+        username = user_data[0]['username']
         if user_type == 'User':
             # print('user functionality')
             self.hide()
-            self.user_func = UserFunctionality(self)
+            self.user_func = UserFunctionality(self, username)
             self.user_func.show()
         elif user_type == 'Visitor':
             # print ('visitor functionality')
             self.hide()
-            self.visitor_func = VisitorFunctionality(self)
+            self.visitor_func = VisitorFunctionality(self, username)
             self.visitor_func.show()
         elif user_type == 'Employee':
             cursor = connection.cursor()
@@ -1384,28 +1692,28 @@ class UserLogin(QWidget):
             if (emp_type == 'Admin' and not visitor):
                 print("admin functionality")
                 self.hide()
-                self.admin_func = AdminFunctionality(self)
+                self.admin_func = AdminFunctionality(self, username)
                 self.admin_func.show()
             elif (emp_type == 'Admin' and visitor):
                 print("admin-visitor functionality")
                 self.hide()
-                self.admin_visitor_func = AdminVisitorFunctionality(self)
+                self.admin_visitor_func = AdminVisitorFunctionality(self, username)
                 self.admin_visitor_func.show()
             elif (emp_type == 'Manager' and not visitor):
                 self.hide()
-                self.manager_visitor_func = ManagerFunctionality(self)
+                self.manager_visitor_func = ManagerFunctionality(self, username)
                 self.manager_visitor_func.show()
             elif (emp_type == 'Manager' and visitor):
                 self.hide()
-                self.manager_visitor_func = ManagerVisitorFunctionality(self)
+                self.manager_visitor_func = ManagerVisitorFunctionality(self, username)
                 self.manager_visitor_func.show()
             elif (emp_type == 'Staff' and not visitor):
                 self.hide()
-                self.emp_func = EmpFunctionality(self)
+                self.emp_func = EmpFunctionality(self, username)
                 self.emp_func.show()
             elif (emp_type == 'Staff' and visitor):
                 self.hide()
-                self.emp_visitor_func = EmpVisitorFunctionality(self)
+                self.emp_visitor_func = EmpVisitorFunctionality(self, username)
                 self.emp_visitor_func.show()
 
 
