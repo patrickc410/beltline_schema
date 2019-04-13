@@ -26,12 +26,902 @@ from PyQt5.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QHBoxLayout,
-    QComboBox
+    QComboBox,
+    QCheckBox
 )
 from PyQt5.QtGui import (
     QStandardItemModel,
     QStandardItem,
     QPixmap)
+
+
+
+# SCREEN NUMBER 22
+class AdminManageTransit(QWidget):
+    def __init__(self, parent, username):
+        super(AdminManageTransit, self).__init__()
+        self.setWindowTitle("Manage Transit")
+        self.parent = parent
+        self.username = username
+
+        self.vbox = QVBoxLayout()
+
+        self.hbox1 = QHBoxLayout()
+        self.hbox2 = QHBoxLayout()
+        self.hbox3 = QHBoxLayout()
+        self.hbox4 = QHBoxLayout()
+
+        site_name_list = create_site_name_list()
+
+        self.contain_site_label = QLabel("Contain Site: ")
+        self.contain_site_dropdown = QComboBox(self)
+        self.contain_site_dropdown.addItems(site_name_list)
+        self.hbox1.addWidget(self.contain_site_label)
+        self.hbox1.addWidget(self.contain_site_dropdown)
+        self.vbox.addLayout(self.hbox1)
+
+        self.transport_type_label = QLabel("Transport Type: ")
+        self.transport_type_dropdown = QComboBox(self)
+        self.transport_type_dropdown.addItems(["--ALL--", "MARTA", "Bus", "Bike"])
+        self.hbox2.addWidget(self.transport_type_label)
+        self.hbox2.addWidget(self.transport_type_dropdown)
+        self.vbox.addLayout(self.hbox2)
+
+        self.hbox3 = QHBoxLayout()
+        self.route_label = QLabel("Route: ")
+        self.route = QLineEdit(self)
+        self.hbox3.addWidget(self.route_label)
+        self.hbox3.addWidget(self.route)
+        self.vbox.addLayout(self.hbox3)
+        self.vbox.addLayout(self.hbox3)
+
+        self.price_range_label = QLabel("Price Range: ")
+        self.lower_price_bound = QLineEdit(self)
+        self.dash_label = QLabel(" -- ")
+        self.upper_price_bound = QLineEdit(self)
+        self.hbox4.addWidget(self.price_range_label)
+        self.hbox4.addWidget(self.lower_price_bound)
+        self.hbox4.addWidget(self.dash_label)
+        self.hbox4.addWidget(self.upper_price_bound)
+        self.vbox.addLayout(self.hbox4)
+
+        self.filter_btn = QPushButton('Filter', self)
+        self.filter_btn.clicked.connect(self.handleFilter)
+        self.vbox.addWidget(self.filter_btn)
+
+
+        cursor = connection.cursor()
+        query = "select transit.route, type, price, count(site_name) as '# Connected Sites' "\
+            + "from transit join transit_connections "\
+            + "where transit_connections.route = transit.route "\
+            + "and transit_connections.transit_type = transit.type "\
+            + "group by transit.route, transit.type"
+        cursor.execute(query)
+        table_data = []
+        transit_data = [line for line in cursor]
+        for i in transit_data:
+            table_data.append([i["route"], i["type"], str(i["price"]), i["# Connected Sites"]])
+        cursor.close()
+
+
+        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites"], table_data)
+        self.table_view = QTableView()
+        self.table_view.setModel(self.table_model)
+        self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
+        self.vbox.addWidget(self.table_view)
+
+
+        self.hbox5 = QHBoxLayout()
+        self.create_btn = QPushButton('Create', self)
+        self.create_btn.clicked.connect(self.handleCreate)
+        self.edit_btn = QPushButton('Edit', self)
+        self.edit_btn.clicked.connect(self.handleEdit)
+        self.delete_btn = QPushButton('Delete', self)
+        self.delete_btn.clicked.connect(self.handleDelete)
+        self.hbox5.addWidget(self.create_btn)
+        self.hbox5.addWidget(self.edit_btn)
+        self.hbox5.addWidget(self.delete_btn)
+        self.vbox.addLayout(self.hbox5)
+
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+        self.vbox.addWidget(self.back_btn)
+
+        self.setLayout(self.vbox)
+
+    def handleFilter(self):
+        pass
+        # site = self.site_dropdown.currentText()
+        # manager = self.manager_username_list[self.manager_dropdown.currentIndex()]
+        # openeveryday = self.openeveryday_dropdown.currentText()
+
+        # if (site == '--ALL--' and manager == '--ALL--'):
+        #     query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
+        #         + "from site join user where manager_user = username "\
+        #         + f"and openeveryday = '{openeveryday}'"
+        # elif (site == '--ALL--'):
+        #     query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
+        #         + "from site join user where manager_user = username "\
+        #         + f"and manager_user = '{manager}' "\
+        #         + f"and openeveryday = '{openeveryday}'"
+        # elif (manager == '--ALL--'):
+        #     query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
+        #         + "from site join user where manager_user = username "\
+        #         + f"and name = '{site}' "\
+        #         + f"and openeveryday = '{openeveryday}'"
+        # else:
+        #     query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
+        #         + "from site join user where manager_user = username "\
+        #         + f"and name = '{site}' "\
+        #         + f"and manager_user = '{manager}' "\
+        #         + f"and openeveryday = '{openeveryday}'"
+        # cursor = connection.cursor()
+        # cursor.execute(query)
+        # site_data = [line for line in cursor]
+        # self.table_data = []
+        # for i in site_data:
+        #     self.table_data.append([i["name"], i["full_name"], i["openeveryday"]])
+        # self.hide()
+        # self.table_model = SimpleTableModel(["Name", "Manager", "Open Every Day"], self.table_data)
+        # self.table_view.setModel(self.table_model)
+        # self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
+        # self.show()
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+    def handleCreate(self):
+        pass
+        # self.hide()
+        # self.admin_create_site = AdminCreateSite(self)
+        # self.admin_create_site.show()
+        # self.admin_create_site.raise_()
+
+    def handleEdit(self):
+        pass
+        # selected = len(self.table_view.selectedIndexes())
+        # print(selected)
+        # row_index = self.table_view.currentIndex().row()
+        # print(row_index)
+        # if (not selected):
+        #     QMessageBox.warning(
+        #         self, 'Error', 'Please select a row of the table')
+        # else:
+        #     site_name = self.table_model.data[row_index][0]
+        #     self.hide()
+        #     self.admin_edit_site = AdminEditSite(self, site_name)
+        #     self.admin_edit_site.show()
+        #     self.admin_edit_site.raise_()
+
+
+
+    def handleDelete(self):
+        selected = len(self.table_view.selectedIndexes())
+        row_index = self.table_view.currentIndex().row()
+        if (not selected):
+            QMessageBox.warning(
+                self, 'Error', 'Please select a row of the table')
+        else:
+            site_name = self.table_model.data[row_index][0]
+            cursor = connection.cursor()
+            query = f"delete from site where name = '{site_name}'"
+            cursor.execute(query)
+            connection.commit()
+            cursor.close()
+            QMessageBox.information(
+                    self, 'Success', "You successfully deleted the selected site!", QMessageBox.Ok)
+            self.handleFilter()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# SCREEN NUMBER 21
+class AdminCreateSite(QWidget):
+    def __init__(self, parent):
+        super(AdminCreateSite, self).__init__()
+        self.setWindowTitle("Create Site")
+        self.parent = parent
+        self.vbox = QVBoxLayout()
+
+        self.hbox1 = QHBoxLayout()
+        self.name_label = QLabel("Name: ")
+        self.name = QLineEdit()
+        self.hbox1.addWidget(self.name_label)
+        self.hbox1.addWidget(self.name)
+        self.vbox.addLayout(self.hbox1)
+
+        self.hbox2 = QHBoxLayout()
+        self.zipcode_label = QLabel("Zipcode: ")
+        self.zipcode = QLineEdit()
+        self.hbox2.addWidget(self.zipcode_label)
+        self.hbox2.addWidget(self.zipcode)
+        self.vbox.addLayout(self.hbox2)
+
+        self.hbox3 = QHBoxLayout()
+        self.address_label = QLabel("Address: ")
+        self.address = QLineEdit()
+        self.hbox3.addWidget(self.address_label)
+        self.hbox3.addWidget(self.address)
+        self.vbox.addLayout(self.hbox3)
+
+        cursor = connection.cursor()
+        query = "select username, concat(fname, ' ', lname) as full_name " \
+            + "from employee join user using (username) " \
+            + "where employee_type = 'Manager' " \
+            + "and username not in (select manager_user from site) "
+        cursor.execute(query)
+        manager_data = [line for line in cursor]
+        cursor.close()
+        manager_dropdown_list = []
+        self.manager_username_list = []
+        for i in manager_data:
+            manager_dropdown_list.append(i["full_name"])
+            self.manager_username_list.append(i["username"])
+
+        self.hbox4 = QHBoxLayout()
+        self.manager_label = QLabel("Manager: ")
+        self.manager_dropdown = QComboBox(self)
+        self.manager_dropdown.addItems(manager_dropdown_list)
+        self.hbox4.addWidget(self.manager_label)
+        self.hbox4.addWidget(self.manager_dropdown)
+        self.vbox.addLayout(self.hbox4)
+
+        self.cb = QCheckBox('Open Every Day?', self)
+        self.cb.setChecked(False)
+        self.vbox.addWidget(self.cb)
+
+        self.hbox5 = QHBoxLayout()
+        self.create_btn = QPushButton('Create', self)
+        self.create_btn.clicked.connect(self.handleCreate)
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+        self.hbox5.addWidget(self.create_btn)
+        self.hbox5.addWidget(self.back_btn)
+        self.vbox.addLayout(self.hbox5)
+
+
+        self.setLayout(self.vbox)
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+    def handleCreate(self):
+        name = self.name.text()
+        zipcode = self.zipcode.text()
+        address = self.address.text()
+        if (len(self.manager_username_list) == 0):
+            QMessageBox.warning(
+                    self, 'Error', 'There are no available managers')
+        else:
+            manager = self.manager_username_list[self.manager_dropdown.currentIndex()]
+            # print(self.manager_username_list[self.manager_dropdown.currentIndex()])
+
+            cursor = connection.cursor()
+            query = "select name from site"
+            cursor.execute(query)
+            site_data = [line for line in cursor]
+            cursor.close()
+            site_name_list = []
+            for i in site_data:
+                site_name_list.append(i["name"])
+
+            if (self.cb.isChecked()):
+                openeveryday = 'Yes'
+            else:
+                openeveryday = 'No'
+
+
+            if (name == '' or zipcode == ''):
+                QMessageBox.warning(
+                        self, 'Error', 'Please fill in the name and zipcode fields')
+            elif (name in site_name_list):
+                QMessageBox.warning(
+                        self, 'Error', 'This site name already exists')
+            elif (len(zipcode) != 5):
+                QMessageBox.warning(
+                        self, 'Error', 'Please enter a valid 5 digit zipcode')
+            else:
+                cursor = connection.cursor()
+                if (address == ''):
+                    query = "insert into site (name, zipcode, openeveryday, manager_user) "\
+                    + f"values ('{name}', '{zipcode}', '{openeveryday}', '{manager}')"
+                else:
+                    query = "insert into site (name, address, zipcode, openeveryday, manager_user) "\
+                        + f"values ('{name}', '{address}', '{zipcode}', '{openeveryday}', '{manager}')"
+                cursor.execute(query)
+                connection.commit()
+                cursor.close()
+                QMessageBox.information(
+                    self, 'Success', "You successfully created a new site!", QMessageBox.Ok)
+                self.close()
+                self.parent.show()
+
+
+
+
+
+
+
+
+# SCREEN NUMBER 20
+class AdminEditSite(QWidget):
+    def __init__(self, parent, site_name):
+        super(AdminEditSite, self).__init__()
+        self.setWindowTitle("Edit Site")
+        self.parent = parent
+        self.site_name_d = site_name
+        self.vbox = QVBoxLayout()
+
+        cursor = connection.cursor()
+        query = "select name, zipcode, address, concat(fname, ' ', lname)  as full_name, " \
+            + "openeveryday from site join user where manager_user = username " \
+            + f"and name = '{self.site_name_d}'"
+        cursor.execute(query)
+        site_data = [line for line in cursor]
+        cursor.close()
+        self.zipcode_d = site_data[0]["zipcode"]
+        self.address_d = site_data[0]["address"]
+        self.manager_d = site_data[0]["full_name"]
+        self.openeveryday_d = site_data[0]["openeveryday"]
+
+
+        self.hbox1 = QHBoxLayout()
+        self.name_label = QLabel("Name: ")
+        self.name = QLineEdit(self.site_name_d)
+        self.hbox1.addWidget(self.name_label)
+        self.hbox1.addWidget(self.name)
+        self.vbox.addLayout(self.hbox1)
+
+        self.hbox2 = QHBoxLayout()
+        self.zipcode_label = QLabel("Zipcode: ")
+        self.zipcode = QLineEdit(self.zipcode_d)
+        self.hbox2.addWidget(self.zipcode_label)
+        self.hbox2.addWidget(self.zipcode)
+        self.vbox.addLayout(self.hbox2)
+
+        self.hbox3 = QHBoxLayout()
+        self.address_label = QLabel("Address: ")
+        self.address = QLineEdit(self.address_d)
+        self.hbox3.addWidget(self.address_label)
+        self.hbox3.addWidget(self.address)
+        self.vbox.addLayout(self.hbox3)
+
+        cursor = connection.cursor()
+        query = "select username, concat(fname, ' ', lname) as full_name " \
+            + "from employee join user using (username) " \
+            + "where employee_type = 'Manager' " \
+            + "and username not in (select manager_user from site) "
+        cursor.execute(query)
+        manager_data = [line for line in cursor]
+        cursor.close()
+        manager_dropdown_list = [self.manager_d]
+        for i in manager_data:
+            manager_dropdown_list.append(i["full_name"])
+
+        self.hbox4 = QHBoxLayout()
+        self.manager_label = QLabel("Manager: ")
+        self.manager_dropdown = QComboBox(self)
+        self.manager_dropdown.addItems(manager_dropdown_list)
+        self.hbox4.addWidget(self.manager_label)
+        self.hbox4.addWidget(self.manager_dropdown)
+        self.vbox.addLayout(self.hbox4)
+
+        print(self.openeveryday_d)
+
+        self.cb = QCheckBox('Open Every Day?', self)
+        if (self.openeveryday_d == 'Yes'):
+            self.cb.setChecked(True)
+        else:
+            self.cb.setChecked(False)
+        # self.cb.stateChanged.connect(self.changeTitle)
+        self.vbox.addWidget(self.cb)
+
+        self.hbox5 = QHBoxLayout()
+        self.update_btn = QPushButton('Update', self)
+        self.update_btn.clicked.connect(self.handleUpdate)
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+        self.hbox5.addWidget(self.update_btn)
+        self.hbox5.addWidget(self.back_btn)
+        self.vbox.addLayout(self.hbox5)
+
+
+        self.setLayout(self.vbox)
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+    def handleUpdate(self):
+        pass
+
+
+# SCREEN NUMBER 19
+class AdminManageSite(QWidget):
+    def __init__(self, parent, username):
+        super(AdminManageSite, self).__init__()
+        self.setWindowTitle("Manage Site")
+        self.parent = parent
+        self.username = username
+
+        self.vbox = QVBoxLayout()
+
+        site_name_list = create_site_name_list()
+        site_name_list.insert(0, "--ALL--")
+        self.hbox1 = QHBoxLayout()
+        self.site_label = QLabel("Site: ")
+        self.site_dropdown = QComboBox(self)
+        self.site_dropdown.addItems(site_name_list)
+        self.hbox1.addWidget(self.site_label)
+        self.hbox1.addWidget(self.site_dropdown)
+        self.vbox.addLayout(self.hbox1)
+
+        cursor = connection.cursor()
+        query = "select name, concat(fname, ' ', lname)  as full_name, " \
+            + "openeveryday, manager_user from site join user where manager_user = username"
+        cursor.execute(query)
+        site_data = [line for line in cursor]
+        cursor.close()
+        self.table_data = []
+        self.manager_username_list = []
+        for i in site_data:
+            self.table_data.append([i["name"], i["full_name"], i["openeveryday"]])
+            self.manager_username_list.append(i["manager_user"])
+
+        manager_name_list = []
+        for i in self.table_data:
+            manager_name_list.append(i[1])
+        manager_name_list.insert(0, "--ALL--")
+        self.manager_username_list.insert(0, "--ALL--")
+
+        self.hbox2 = QHBoxLayout()
+        self.manager_label = QLabel("Manager: ")
+        self.manager_dropdown = QComboBox(self)
+        self.manager_dropdown.addItems(manager_name_list)
+        self.hbox2.addWidget(self.manager_label)
+        self.hbox2.addWidget(self.manager_dropdown)
+        self.vbox.addLayout(self.hbox2)
+
+        self.hbox3 = QHBoxLayout()
+        self.openeveryday_label = QLabel("Open Every Day: ")
+        self.openeveryday_dropdown = QComboBox(self)
+        self.openeveryday_dropdown.addItems(["No", "Yes"])
+        self.hbox3.addWidget(self.openeveryday_label)
+        self.hbox3.addWidget(self.openeveryday_dropdown)
+        self.vbox.addLayout(self.hbox3)
+
+        self.filter_btn = QPushButton('Filter', self)
+        self.filter_btn.clicked.connect(self.handleFilter)
+        self.vbox.addWidget(self.filter_btn)
+
+        self.table_model = SimpleTableModel(["Name", "Manager", "Open Every Day"], self.table_data)
+        self.table_view = QTableView()
+        self.table_view.setModel(self.table_model)
+        self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
+        self.vbox.addWidget(self.table_view)
+
+        self.hbox4 = QHBoxLayout()
+        self.create_btn = QPushButton('Create', self)
+        self.create_btn.clicked.connect(self.handleCreate)
+        self.edit_btn = QPushButton('Edit', self)
+        self.edit_btn.clicked.connect(self.handleEdit)
+        self.delete_btn = QPushButton('Delete', self)
+        self.delete_btn.clicked.connect(self.handleDelete)
+        self.hbox4.addWidget(self.create_btn)
+        self.hbox4.addWidget(self.edit_btn)
+        self.hbox4.addWidget(self.delete_btn)
+        self.vbox.addLayout(self.hbox4)
+
+
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+        self.vbox.addWidget(self.back_btn)
+
+        self.setLayout(self.vbox)
+
+    def handleFilter(self):
+        site = self.site_dropdown.currentText()
+        manager = self.manager_username_list[self.manager_dropdown.currentIndex()]
+        openeveryday = self.openeveryday_dropdown.currentText()
+
+        if (site == '--ALL--' and manager == '--ALL--'):
+            query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
+                + "from site join user where manager_user = username "\
+                + f"and openeveryday = '{openeveryday}'"
+        elif (site == '--ALL--'):
+            query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
+                + "from site join user where manager_user = username "\
+                + f"and manager_user = '{manager}' "\
+                + f"and openeveryday = '{openeveryday}'"
+        elif (manager == '--ALL--'):
+            query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
+                + "from site join user where manager_user = username "\
+                + f"and name = '{site}' "\
+                + f"and openeveryday = '{openeveryday}'"
+        else:
+            query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
+                + "from site join user where manager_user = username "\
+                + f"and name = '{site}' "\
+                + f"and manager_user = '{manager}' "\
+                + f"and openeveryday = '{openeveryday}'"
+        cursor = connection.cursor()
+        cursor.execute(query)
+        site_data = [line for line in cursor]
+        self.table_data = []
+        for i in site_data:
+            self.table_data.append([i["name"], i["full_name"], i["openeveryday"]])
+        self.hide()
+        self.table_model = SimpleTableModel(["Name", "Manager", "Open Every Day"], self.table_data)
+        self.table_view.setModel(self.table_model)
+        self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
+        self.show()
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+    def handleCreate(self):
+        self.hide()
+        self.admin_create_site = AdminCreateSite(self)
+        self.admin_create_site.show()
+        self.admin_create_site.raise_()
+
+    def handleEdit(self):
+        selected = len(self.table_view.selectedIndexes())
+        print(selected)
+        row_index = self.table_view.currentIndex().row()
+        print(row_index)
+        if (not selected):
+            QMessageBox.warning(
+                self, 'Error', 'Please select a row of the table')
+        else:
+            site_name = self.table_model.data[row_index][0]
+            self.hide()
+            self.admin_edit_site = AdminEditSite(self, site_name)
+            self.admin_edit_site.show()
+            self.admin_edit_site.raise_()
+
+
+
+    def handleDelete(self):
+        selected = len(self.table_view.selectedIndexes())
+        row_index = self.table_view.currentIndex().row()
+        if (not selected):
+            QMessageBox.warning(
+                self, 'Error', 'Please select a row of the table')
+        else:
+            site_name = self.table_model.data[row_index][0]
+            cursor = connection.cursor()
+            query = f"delete from site where name = '{site_name}'"
+            cursor.execute(query)
+            connection.commit()
+            cursor.close()
+            QMessageBox.information(
+                    self, 'Success', "You successfully deleted the selected site!", QMessageBox.Ok)
+            self.handleFilter()
+
+
+# SCREEN NUMBER 18
+class AdminManageUser(QWidget):
+    def __init__(self, parent, username):
+        super(AdminManageUser, self).__init__()
+        self.setWindowTitle("Manage Profile")
+        self.parent = parent
+        self.username = username
+
+        self.vbox = QVBoxLayout()
+
+        self.hbox1 = QHBoxLayout()
+        self.username_label = QLabel("Username: ")
+        self.username = QLineEdit(self)
+        self.hbox1.addWidget(self.username_label)
+        self.hbox1.addWidget(self.username)
+        self.vbox.addLayout(self.hbox1)
+
+        self.hbox2 = QHBoxLayout()
+        self.type_label = QLabel("Type: ")
+        self.type_dropdown = QComboBox(self)
+        self.type_dropdown.addItems(["User", "Visitor", "Staff", "Manager"])
+        self.hbox2.addWidget(self.type_label)
+        self.hbox2.addWidget(self.type_dropdown)
+        self.vbox.addLayout(self.hbox2)
+
+        self.hbox3 = QHBoxLayout()
+        self.status_label = QLabel("Status: ")
+        self.status_dropdown = QComboBox(self)
+        self.status_dropdown.addItems(["--ALL--", "Approved", "Pending", "Declined"])
+        self.hbox3.addWidget(self.status_label)
+        self.hbox3.addWidget(self.status_dropdown)
+        self.vbox.addLayout(self.hbox3)
+
+        self.filter_btn = QPushButton('Filter', self)
+        self.filter_btn.clicked.connect(self.handleFilter)
+        self.vbox.addWidget(self.filter_btn)
+
+        cursor = connection.cursor()
+        query = "select username, count(email) as 'email count', user_type, status " \
+            + "from user join email using (username) " \
+            + "group by username "
+        cursor.execute(query)
+        user_data = [line for line in cursor]
+        cursor.close()
+        self.table_data = []
+        for i in user_data:
+            self.table_data.append([i["username"], i["email count"], i["user_type"], i["status"]])
+        pprint(self.table_data)
+
+
+        cursor = connection.cursor()
+        query = "select employee_type, username " \
+            + "from user join employee using (username)"
+        cursor.execute(query)
+        emp_data = [line for line in cursor]
+        cursor.close()
+        emp_type_dict = {}
+        for i in emp_data:
+            emp_type_dict[i["username"]] = i["employee_type"]
+        print(emp_type_dict)
+
+        admin_username_list = []
+
+        for i in self.table_data:
+            if i[2] == 'Employee':
+                if (emp_type_dict[i[0]] == 'Admin'):
+                    admin_username_list.append(i)
+                i[2] = emp_type_dict[i[0]]
+
+        for i in admin_username_list:
+            self.table_data.remove(i)
+
+        self.table_model = SimpleTableModel(["Username", "Email Count", "User Type", "Status"], self.table_data)
+        self.table_view = QTableView()
+        self.table_view.setModel(self.table_model)
+        self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
+        self.vbox.addWidget(self.table_view)
+
+        self.hbox4 = QHBoxLayout()
+        self.approve_btn = QPushButton('Approve', self)
+        self.approve_btn.clicked.connect(self.handleApprove)
+        self.decline_btn = QPushButton('Decline', self)
+        self.decline_btn.clicked.connect(self.handleDecline)
+        self.hbox4.addWidget(self.approve_btn)
+        self.hbox4.addWidget(self.decline_btn)
+        self.vbox.addLayout(self.hbox4)
+
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+        self.vbox.addWidget(self.back_btn)
+
+        self.setLayout(self.vbox)
+
+    def handleFilter(self):
+        pass
+
+    def handleApprove(self):
+        pass
+
+    def handleDecline(self):
+        pass
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+
+# SCREEN NUMBER 17
+class EmployeeManageProfile(QWidget):
+    def __init__(self, parent, username):
+        super(EmployeeManageProfile, self).__init__()
+        self.setWindowTitle("Manage Profile")
+
+        self.username_d = username
+        self.parent = parent
+
+        cursor = connection.cursor()
+        query = "select fname, lname, username, employeeID, phone, address, city, state, zipcode, employee_type " \
+            + f"from user join employee using (username) where username = '{self.username_d}' "
+        cursor.execute(query)
+        emp_data = [line for line in cursor]
+        self.fname_d = emp_data[0]["fname"]
+        self.lname_d = emp_data[0]["lname"]
+        self.employeeID_d = emp_data[0]["employeeID"]
+        self.address_d = emp_data[0]["address"]
+        self.city_d = emp_data[0]["city"]
+        self.state_d = emp_data[0]["state"]
+        self.zipcode_d = emp_data[0]["zipcode"]
+        self.employee_type_d = emp_data[0]["employee_type"]
+        self.phone_d = emp_data[0]["phone"]
+        cursor.close()
+
+        self.site_name_d = " "
+        if self.employee_type_d == 'Manager':
+            cursor = connection.cursor()
+            query_manager_site = "select name " \
+                + "from employee join site " \
+                + "where manager_user = username " \
+                + f"and username = '{self.username_d}' "
+            cursor.execute(query_manager_site)
+            data = [line for line in cursor]
+            self.site_name_d = data[0]["name"]
+            cursor.close()
+
+        query_email = "select email from user join email "\
+            + f"using (username) where username = '{self.username_d}'"
+        cursor = connection.cursor()
+        cursor.execute(query_email)
+        email_data = [line for line in cursor]
+        self.email_list = []
+        for i in email_data:
+            self.email_list.append([i["email"]])
+        cursor.close()
+        # self.email_count = len(self.email_list)
+
+        self.vbox = QVBoxLayout()
+
+
+        self.firstname = QLineEdit(self.fname_d)
+        self.lastname = QLineEdit(self.lname_d)
+        self.username = QLabel(self.username_d)
+        self.phone = QLineEdit(self.phone_d)
+        self.address_string_d = f"{self.address_d}, {self.city_d}, {self.state_d} {self.zipcode_d}"
+        self.address = QLabel(self.address_string_d)
+        self.employeeID = QLabel("{:09d}".format(self.employeeID_d))
+        self.site_name = QLabel(self.site_name_d)
+        self.form_group_box = QGroupBox()
+        self.form_layout = QFormLayout()
+        self.form_layout.addRow(QLabel("First Name: "), self.firstname)
+        self.form_layout.addRow(QLabel("Last Name: "), self.lastname)
+        self.form_layout.addRow(QLabel("Username: "), self.username)
+        self.form_layout.addRow(QLabel("Site Name: "), self.site_name)
+        self.form_layout.addRow(QLabel("Employee ID: "), self.employeeID)
+        self.form_layout.addRow(QLabel("Phone: "), self.phone)
+        self.form_layout.addRow(QLabel("Address: "), self.address)
+        self.form_group_box.setLayout(self.form_layout)
+        self.vbox.addWidget(self.form_group_box)
+
+        self.table_model = SimpleTableModel(["Email"], self.email_list)
+        self.table_view = QTableView()
+        self.table_view.setModel(self.table_model)
+        self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
+        self.table_view.setColumnWidth(0, 400)
+        self.vbox.addWidget(self.table_view)
+
+        self.delete_selected_btn = QPushButton('Delete Selected Email', self)
+        self.delete_selected_btn.clicked.connect(self.handleDelete)
+        self.vbox.addWidget(self.delete_selected_btn)
+
+        self.hbox1 = QHBoxLayout()
+        self.email_label = QLabel("Email: ")
+        self.email = QLineEdit(self)
+        self.add_btn = QPushButton('Add Email', self)
+        self.add_btn.clicked.connect(self.handleAdd)
+        self.hbox1.addWidget(self.email_label)
+        self.hbox1.addWidget(self.email)
+        self.hbox1.addWidget(self.add_btn)
+        self.vbox.addLayout(self.hbox1)
+
+        self.cb = QCheckBox('Visitor?', self)
+        # self.cb.move(20, 20)
+        self.cb.toggle()
+        # self.cb.stateChanged.connect(self.changeTitle)
+        self.vbox.addWidget(self.cb)
+
+        self.buttonBack = QPushButton('Back', self)
+        self.buttonUpdate = QPushButton('Update', self)
+        self.buttonBack.clicked.connect(self.handleBack)
+        self.buttonUpdate.clicked.connect(self.handleUpdate)
+        self.buttonUpdate.setDefault(True)
+        self.form_group_box3 = QGroupBox()
+        self.form_layout3 = QFormLayout()
+        self.form_layout3.addRow(self.buttonUpdate, self.buttonBack)
+        self.form_group_box3.setLayout(self.form_layout3)
+        self.vbox.addWidget(self.form_group_box3)
+
+        self.setLayout(self.vbox)
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+    def handleUpdate(self):
+        print(self.cb.checkState())
+
+    def handleAdd(self):
+        pass
+
+    def handleDelete(self):
+        pass
+
+
+
+
+
+
+# SCREEN NUMBER 16
+class UserTransitHistory(QWidget):
+    def __init__(self, parent, username):
+        super(UserTransitHistory, self).__init__()
+        self.setWindowTitle("Transit History")
+
+        self.username = username
+        self.parent = parent
+
+        self.vbox = QVBoxLayout()
+
+        self.hbox1 = QHBoxLayout()
+        self.transport_type_label = QLabel("Transport Type: ")
+        self.transport_type_dropdown = QComboBox(self)
+        self.transport_type_dropdown.addItems(["--ALL--", "MARTA", "Bus", "Bike"])
+        self.hbox1.addWidget(self.transport_type_label)
+        self.hbox1.addWidget(self.transport_type_dropdown)
+        self.vbox.addLayout(self.hbox1)
+
+        site_name_list = create_site_name_list()
+        self.hbox2 = QHBoxLayout()
+        self.contain_site_label = QLabel("Contain Site: ")
+        self.contain_site_dropdown = QComboBox(self)
+        self.contain_site_dropdown.addItems(site_name_list)
+        self.hbox2.addWidget(self.contain_site_label)
+        self.hbox2.addWidget(self.contain_site_dropdown)
+        self.vbox.addLayout(self.hbox2)
+
+
+        self.hbox3 = QHBoxLayout()
+        self.route_label = QLabel("Route: ")
+        self.route = QLineEdit(self)
+        self.hbox3.addWidget(self.route_label)
+        self.hbox3.addWidget(self.route)
+        self.vbox.addLayout(self.hbox3)
+
+        self.hbox4 = QHBoxLayout()
+        self.start_date_label = QLabel("Start Date: ")
+        self.start_date = QLineEdit(self)
+        self.end_date_label = QLabel("End Date: ")
+        self.end_date = QLineEdit(self)
+        self.hbox4.addWidget(self.start_date_label)
+        self.hbox4.addWidget(self.start_date)
+        self.hbox4.addWidget(self.end_date_label)
+        self.hbox4.addWidget(self.end_date)
+        self.vbox.addLayout(self.hbox4)
+
+
+        self.filter_btn = QPushButton('Filter', self)
+        self.filter_btn.clicked.connect(self.handleFilter)
+        self.vbox.addWidget(self.filter_btn)
+
+        self.table_model = SimpleTableModel(["Date", "Route", "Transport Type", "Price"], [["", "", "", ""]])
+        self.table_view = QTableView()
+        self.table_view.setModel(self.table_model)
+        self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
+        self.vbox.addWidget(self.table_view)
+
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+        self.vbox.addWidget(self.back_btn)
+
+        self.setLayout(self.vbox)
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+    def handleFilter(self):
+        pass
+
 
 
 class SimpleTableModel(QAbstractTableModel):
@@ -252,44 +1142,48 @@ class UserTakeTransit(QWidget):
 
     def handleLogTransit(self):
         row_index = self.table_view.currentIndex().row()
-        transit_date = self.transit_date.text()
-        date_pattern = r'[\d]{4}-[0,1][\d]{1}-[0,1,2,3][\d]{1}'
-        date_check = re.fullmatch(date_pattern, transit_date)
-        route = self.table_model.data[row_index][0]
-        transit_type = self.table_model.data[row_index][1]
-        query_check = "select exists (select username " \
-            + "from take_transit " \
-            + f"where username = '{self.username}' " \
-            + f"and transit_type = '{transit_type}' " \
-            + f"and route = '{route}' " \
-            + f"and take_date = '{transit_date}')"
-        cursor = connection.cursor()
-        cursor.execute(query_check)
-        same_day_check = [line for line in cursor]
-        same_day = list(same_day_check[0].values())[0]
-        print(same_day)
-        # print(same_day_check)
 
-        cursor.close()
         if (row_index == -1):
             QMessageBox.warning(
                 self, 'Error', 'Please select a row of the table')
-        elif (date_check == None):
-            QMessageBox.warning(
-                self, 'Error', 'Please enter a valid date in the form YYYY-MM-DD')
-        elif (same_day):
-            QMessageBox.warning(
-                self, 'Error', 'You cannot take the same transit twice in one day')
         else:
 
-            query = "insert into take_transit " \
-                + "(username, transit_type, route, take_date) " \
-                + f"values ('{self.username}', '{transit_type}', '{route}', '{transit_date}');"
+            transit_date = self.transit_date.text()
+            date_pattern = r'[\d]{4}-[0,1][\d]{1}-[0,1,2,3][\d]{1}'
+            date_check = re.fullmatch(date_pattern, transit_date)
+            route = self.table_model.data[row_index][0]
+            transit_type = self.table_model.data[row_index][1]
+            query_check = "select exists (select username " \
+                + "from take_transit " \
+                + f"where username = '{self.username}' " \
+                + f"and transit_type = '{transit_type}' " \
+                + f"and route = '{route}' " \
+                + f"and take_date = '{transit_date}')"
             cursor = connection.cursor()
-            cursor.execute(query)
-            connection.commit()
+            cursor.execute(query_check)
+            same_day_check = [line for line in cursor]
+            same_day = list(same_day_check[0].values())[0]
+            print(same_day)
+            # print(same_day_check)
+
             cursor.close()
-            QMessageBox.information(self, 'PyQt5 message', "You successfully logged your journey!", QMessageBox.Ok)
+
+            if (date_check == None):
+                QMessageBox.warning(
+                    self, 'Error', 'Please enter a valid date in the form YYYY-MM-DD')
+            elif (same_day):
+                QMessageBox.warning(
+                    self, 'Error', 'You cannot take the same transit twice in one day')
+            else:
+
+                query = "insert into take_transit " \
+                    + "(username, transit_type, route, take_date) " \
+                    + f"values ('{self.username}', '{transit_type}', '{route}', '{transit_date}');"
+                cursor = connection.cursor()
+                cursor.execute(query)
+                connection.commit()
+                cursor.close()
+                QMessageBox.information(self, 'PyQt5 message', "You successfully logged your journey!", QMessageBox.Ok)
 
 
 
@@ -351,7 +1245,10 @@ class VisitorFunctionality(QWidget):
         self.user_take_transit.raise_()
 
     def handleViewTransitHistory(self):
-        pass
+        self.hide()
+        self.user_transit_history = UserTransitHistory(self, self.username)
+        self.user_transit_history.show()
+        self.user_transit_history.raise_()
 
     def handleExploreSite(self):
         pass
@@ -416,7 +1313,10 @@ class EmpVisitorFunctionality(QWidget):
 
 
     def handleManageProfile(self):
-        pass
+        self.hide()
+        self.emp_manage_profile = EmployeeManageProfile(self, self.username)
+        self.emp_manage_profile.show()
+        self.emp_manage_profile.raise_()
 
     def handleViewSchedule(self):
         pass
@@ -428,7 +1328,10 @@ class EmpVisitorFunctionality(QWidget):
         self.user_take_transit.raise_()
 
     def handleViewTransitHistory(self):
-        pass
+        self.hide()
+        self.user_transit_history = UserTransitHistory(self, self.username)
+        self.user_transit_history.show()
+        self.user_transit_history.raise_()
 
     def handleExploreSite(self):
         pass
@@ -482,7 +1385,10 @@ class EmpFunctionality(QWidget):
 
 
     def handleManageProfile(self):
-        pass
+        self.hide()
+        self.emp_manage_profile = EmployeeManageProfile(self, self.username)
+        self.emp_manage_profile.show()
+        self.emp_manage_profile.raise_()
 
     def handleViewSchedule(self):
         pass
@@ -494,7 +1400,10 @@ class EmpFunctionality(QWidget):
         self.user_take_transit.raise_()
 
     def handleViewTransitHistory(self):
-        pass
+        self.hide()
+        self.user_transit_history = UserTransitHistory(self, self.username)
+        self.user_transit_history.show()
+        self.user_transit_history.raise_()
 
     def handleBack(self):
         self.close()
@@ -545,7 +1454,10 @@ class ManagerFunctionality(QWidget):
 
 
     def handleManageProfile(self):
-        pass
+        self.hide()
+        self.emp_manage_profile = EmployeeManageProfile(self, self.username)
+        self.emp_manage_profile.show()
+        self.emp_manage_profile.raise_()
 
     def handleManageEvent(self):
         pass
@@ -569,7 +1481,10 @@ class ManagerFunctionality(QWidget):
         pass
 
     def handleViewTransitHistory(self):
-        pass
+        self.hide()
+        self.user_transit_history = UserTransitHistory(self, self.username)
+        self.user_transit_history.show()
+        self.user_transit_history.raise_()
 
     def handleViewVisitHistory(self):
         pass
@@ -636,7 +1551,10 @@ class ManagerVisitorFunctionality(QWidget):
 
 
     def handleManageProfile(self):
-        pass
+        self.hide()
+        self.emp_manage_profile = EmployeeManageProfile(self, self.username)
+        self.emp_manage_profile.show()
+        self.emp_manage_profile.raise_()
 
     def handleManageEvent(self):
         pass
@@ -660,7 +1578,10 @@ class ManagerVisitorFunctionality(QWidget):
         pass
 
     def handleViewTransitHistory(self):
-        pass
+        self.hide()
+        self.user_transit_history = UserTransitHistory(self, self.username)
+        self.user_transit_history.show()
+        self.user_transit_history.raise_()
 
     def handleViewVisitHistory(self):
         pass
@@ -705,7 +1626,10 @@ class UserFunctionality(QWidget):
         self.user_take_transit.raise_()
 
     def handleViewTransitHistory(self):
-        pass
+        self.hide()
+        self.user_transit_history = UserTransitHistory(self, self.username)
+        self.user_transit_history.show()
+        self.user_transit_history.raise_()
 
     def handleBack(self):
         self.close()
@@ -767,16 +1691,28 @@ class AdminVisitorFunctionality(QWidget):
 
 
     def handleManageProfile(self):
-        pass
+        self.hide()
+        self.emp_manage_profile = EmployeeManageProfile(self, self.username)
+        self.emp_manage_profile.show()
+        self.emp_manage_profile.raise_()
 
     def handleManageUser(self):
-        pass
+        self.hide()
+        self.admin_manage_user = AdminManageUser(self, self.username)
+        self.admin_manage_user.show()
+        self.admin_manage_user.raise_()
 
     def handleManageTransit(self):
-        pass
+        self.hide()
+        self.admin_manage_transit = AdminManageTransit(self, self.username)
+        self.admin_manage_transit.show()
+        self.admin_manage_transit.raise_()
 
     def handleManageSite(self):
-        pass
+        self.hide()
+        self.admin_manage_site = AdminManageSite(self, self.username)
+        self.admin_manage_site.show()
+        self.admin_manage_site.raise_()
 
     def handleTakeTransit(self):
         self.hide()
@@ -791,7 +1727,10 @@ class AdminVisitorFunctionality(QWidget):
         pass
 
     def handleViewTransitHistory(self):
-        pass
+        self.hide()
+        self.user_transit_history = UserTransitHistory(self, self.username)
+        self.user_transit_history.show()
+        self.user_transit_history.raise_()
 
     def handleViewVisitHistory(self):
         pass
@@ -846,16 +1785,28 @@ class AdminFunctionality(QWidget):
 
 
     def handleManageProfile(self):
-        pass
+        self.hide()
+        self.emp_manage_profile = EmployeeManageProfile(self, self.username)
+        self.emp_manage_profile.show()
+        self.emp_manage_profile.raise_()
 
     def handleManageUser(self):
-        pass
+        self.hide()
+        self.admin_manage_user = AdminManageUser(self, self.username)
+        self.admin_manage_user.show()
+        self.admin_manage_user.raise_()
 
     def handleManageTransit(self):
-        pass
+        self.hide()
+        self.admin_manage_transit = AdminManageTransit(self, self.username)
+        self.admin_manage_transit.show()
+        self.admin_manage_transit.raise_()
 
     def handleManageSite(self):
-        pass
+        self.hide()
+        self.admin_manage_site = AdminManageSite(self, self.username)
+        self.admin_manage_site.show()
+        self.admin_manage_site.raise_()
 
     def handleTakeTransit(self):
         self.hide()
@@ -864,7 +1815,10 @@ class AdminFunctionality(QWidget):
         self.user_take_transit.raise_()
 
     def handleViewTransitHistory(self):
-        pass
+        self.hide()
+        self.user_transit_history = UserTransitHistory(self, self.username)
+        self.user_transit_history.show()
+        self.user_transit_history.raise_()
 
     def handleBack(self):
         self.close()
