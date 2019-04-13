@@ -36,6 +36,180 @@ from PyQt5.QtGui import (
 
 
 
+
+# SCREEN NUMBER 24
+class AdminCreateTransit(QWidget):
+    def __init__(self, parent):
+        super(AdminCreateTransit, self).__init__()
+        self.setWindowTitle("Create Transit")
+        self.parent = parent
+
+        self.vbox = QVBoxLayout()
+
+        self.hbox1 = QHBoxLayout()
+        self.transport_type_label = QLabel("Transport Type: ")
+        self.transport_type_dropdown = QComboBox(self)
+        self.transport_type_dropdown.addItems(["MARTA", "Bus", "Bike"])
+        self.hbox1.addWidget(self.transport_type_label)
+        self.hbox1.addWidget(self.transport_type_dropdown)
+        self.vbox.addLayout(self.hbox1)
+
+        self.hbox2 = QHBoxLayout()
+        self.route_label = QLabel("Route: ")
+        self.route = QLineEdit()
+        self.hbox2.addWidget(self.route_label)
+        self.hbox2.addWidget(self.route)
+        self.vbox.addLayout(self.hbox2)
+
+        self.hbox3 = QHBoxLayout()
+        self.price_label = QLabel("Price ($): ")
+        self.price = QLineEdit()
+        self.hbox3.addWidget(self.price_label)
+        self.hbox3.addWidget(self.price)
+        self.vbox.addLayout(self.hbox3)
+
+        site_name_list = create_site_name_list()
+
+        self.connected_sites_checkboxes = []
+        for i in site_name_list:
+            cb = QCheckBox(i, self)
+            cb.setChecked(False)
+            self.connected_sites_checkboxes.append(cb)
+            self.vbox.addWidget(cb)
+
+        self.hbox4 = QHBoxLayout()
+        self.create_btn = QPushButton('Create', self)
+        self.create_btn.clicked.connect(self.handleCreate)
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+        self.hbox4.addWidget(self.create_btn)
+        self.hbox4.addWidget(self.back_btn)
+        self.vbox.addLayout(self.hbox4)
+
+        self.setLayout(self.vbox)
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+    def handleCreate(self):
+        transit_type = self.transport_type_dropdown.currentText()
+        route = self.route.text()
+        if (transit_type == '' or route == '' or self.price.text() == ''):
+            QMessageBox.warning(
+                    self, 'Error', 'Please fill in all fields')
+        else:
+            price = float(self.price.text())
+            query = f"select exists (select route, type from transit where route = '{route}' and type = '{transit_type}')"
+            cursor = connection.cursor()
+            cursor.execute(query)
+            transit_check = [line for line in cursor]
+            cursor.close()
+            unique_transit = list(transit_check[0].values())[0]
+            print(unique_transit)
+            if (unique_transit):
+                QMessageBox.warning(
+                        self, 'Error', 'The transit you are trying to create already exists')
+            else:
+                query = f"insert into transit (type, route, price) values ('{transit_type}', '{route}', '{price}')"
+                cursor = connection.cursor()
+                cursor.execute(query)
+
+                connected_sites_list = []
+
+                for i in self.connected_sites_checkboxes:
+                    if (i.isChecked()):
+                        connected_sites_list.append(i.text())
+
+                for i in connected_sites_list:
+                    query1 = f"insert into transit_connections (site_name, "\
+                        + f"transit_type, route) values ('{i}', '{transit_type}', '{route}')"
+                    cursor.execute(query1)
+                connection.commit()
+                cursor.close()
+
+
+
+# SCREEN NUMBER 23
+class AdminEditTransit(QWidget):
+    def __init__(self, parent, route, transit_type):
+        super(AdminEditTransit, self).__init__()
+        self.setWindowTitle("Edit Transit")
+        self.parent = parent
+        self.route_d = route
+        self.type_d = transit_type
+
+        self.vbox = QVBoxLayout()
+
+        self.hbox1 = QHBoxLayout()
+        self.transport_type_label = QLabel("Transport Type: ")
+        self.transport_type = QLabel(self.type_d)
+        self.hbox1.addWidget(self.transport_type_label)
+        self.hbox1.addWidget(self.transport_type)
+        self.vbox.addLayout(self.hbox1)
+
+        self.hbox2 = QHBoxLayout()
+        self.route_label = QLabel("Route: ")
+        self.route = QLineEdit(self.route_d)
+        self.hbox2.addWidget(self.route_label)
+        self.hbox2.addWidget(self.route)
+        self.vbox.addLayout(self.hbox2)
+
+        cursor = connection.cursor()
+        query = "select transit.route, type, price, site_name "\
+            + "from transit join transit_connections "\
+            + "where transit_connections.route = transit.route "\
+            + "and transit_connections.transit_type = transit.type "\
+            + f"and transit.route = '{self.route_d}' "\
+            + f"and type = '{self.type_d}' "
+        cursor.execute(query)
+        transit_data = [line for line in cursor]
+        cursor.close()
+        self.price_d = transit_data[0]["price"]
+        self.connected_sites_list = []
+        for i in transit_data:
+            self.connected_sites_list.append(i["site_name"])
+
+
+        self.hbox3 = QHBoxLayout()
+        self.price_label = QLabel("Price ($): ")
+        self.price = QLineEdit(str(self.price_d))
+        self.hbox3.addWidget(self.price_label)
+        self.hbox3.addWidget(self.price)
+        self.vbox.addLayout(self.hbox3)
+
+        site_name_list = create_site_name_list()
+
+        self.connected_sites_checkboxes = []
+        for i in site_name_list:
+            cb = QCheckBox(i, self)
+            if (i in self.connected_sites_list):
+                cb.setChecked(True)
+            else:
+                cb.setChecked(False)
+            self.connected_sites_checkboxes.append(cb)
+            self.vbox.addWidget(cb)
+
+        self.hbox4 = QHBoxLayout()
+        self.update_btn = QPushButton('Update', self)
+        self.update_btn.clicked.connect(self.handleUpdate)
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+        self.hbox4.addWidget(self.update_btn)
+        self.hbox4.addWidget(self.back_btn)
+        self.vbox.addLayout(self.hbox4)
+
+        self.setLayout(self.vbox)
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+    def handleUpdate(self):
+        pass
+
+
+
 # SCREEN NUMBER 22
 class AdminManageTransit(QWidget):
     def __init__(self, parent, username):
@@ -73,7 +247,6 @@ class AdminManageTransit(QWidget):
         self.hbox3.addWidget(self.route_label)
         self.hbox3.addWidget(self.route)
         self.vbox.addLayout(self.hbox3)
-        self.vbox.addLayout(self.hbox3)
 
         self.price_range_label = QLabel("Price Range: ")
         self.lower_price_bound = QLineEdit(self)
@@ -91,20 +264,22 @@ class AdminManageTransit(QWidget):
 
 
         cursor = connection.cursor()
-        query = "select transit.route, type, price, count(site_name) as '# Connected Sites' "\
-            + "from transit join transit_connections "\
-            + "where transit_connections.route = transit.route "\
+        query = "select transit.route, type, price, count(distinct site_name) as '# Connected Sites', count(take_date) as '# Transit Logged' "\
+            + "from transit, transit_connections, take_transit "\
+            + "where transit_connections.route = transit.route " \
             + "and transit_connections.transit_type = transit.type "\
-            + "group by transit.route, transit.type"
+            + "and take_transit.transit_type = transit.type "\
+            + "and take_transit.route= transit.route "\
+            + "group by transit.route, transit.type "
         cursor.execute(query)
         table_data = []
         transit_data = [line for line in cursor]
         for i in transit_data:
-            table_data.append([i["route"], i["type"], str(i["price"]), i["# Connected Sites"]])
+            table_data.append([i["route"], i["type"], str(i["price"]), i["# Connected Sites"], i["# Transit Logged"]])
         cursor.close()
 
 
-        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites"], table_data)
+        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites", "# Transit Logged"], table_data)
         self.table_view = QTableView()
         self.table_view.setModel(self.table_model)
         self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
@@ -130,69 +305,106 @@ class AdminManageTransit(QWidget):
         self.setLayout(self.vbox)
 
     def handleFilter(self):
-        pass
-        # site = self.site_dropdown.currentText()
-        # manager = self.manager_username_list[self.manager_dropdown.currentIndex()]
-        # openeveryday = self.openeveryday_dropdown.currentText()
+        site = self.contain_site_dropdown.currentText()
+        transit_type = self.transport_type_dropdown.currentText()
+        lower_price_bound = self.lower_price_bound.text()
+        upper_price_bound = self.upper_price_bound.text()
+        route = self.route.text()
 
-        # if (site == '--ALL--' and manager == '--ALL--'):
-        #     query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
-        #         + "from site join user where manager_user = username "\
-        #         + f"and openeveryday = '{openeveryday}'"
-        # elif (site == '--ALL--'):
-        #     query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
-        #         + "from site join user where manager_user = username "\
-        #         + f"and manager_user = '{manager}' "\
-        #         + f"and openeveryday = '{openeveryday}'"
-        # elif (manager == '--ALL--'):
-        #     query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
-        #         + "from site join user where manager_user = username "\
-        #         + f"and name = '{site}' "\
-        #         + f"and openeveryday = '{openeveryday}'"
-        # else:
-        #     query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
-        #         + "from site join user where manager_user = username "\
-        #         + f"and name = '{site}' "\
-        #         + f"and manager_user = '{manager}' "\
-        #         + f"and openeveryday = '{openeveryday}'"
-        # cursor = connection.cursor()
-        # cursor.execute(query)
-        # site_data = [line for line in cursor]
-        # self.table_data = []
-        # for i in site_data:
-        #     self.table_data.append([i["name"], i["full_name"], i["openeveryday"]])
-        # self.hide()
-        # self.table_model = SimpleTableModel(["Name", "Manager", "Open Every Day"], self.table_data)
-        # self.table_view.setModel(self.table_model)
-        # self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
-        # self.show()
+
+
+        table_data = []
+        cursor = connection.cursor()
+
+        transit_type_filter = True
+        route_filter = True
+        query = ''
+
+        if (transit_type == '--ALL--'):
+            transit_type_filter = False
+
+        if (route == ''):
+            route_filter = False
+
+        if (lower_price_bound == ''):
+            lower_price_bound = 0
+        else:
+            lower_price_bound = float(lower_price_bound)
+
+        if (upper_price_bound == ''):
+            upper_price_bound = 100
+        else:
+            upper_price_bound = float(upper_price_bound)
+
+        print(site)
+        print(transit_type)
+        print(lower_price_bound)
+        print(upper_price_bound)
+        print(route)
+
+
+        #TODO - implement route filtering
+
+        if (not transit_type_filter):
+            query = "select transit.route, type, price, count(distinct site_name) as '# Connected Sites', count(take_date) as '# Transit Logged' "\
+                + "from transit, transit_connections, take_transit "\
+                + "where transit_connections.route = transit.route " \
+                + "and transit_connections.transit_type = transit.type "\
+                + "and take_transit.transit_type = transit.type "\
+                + "and take_transit.route= transit.route "\
+                + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{site}') "\
+                + f"and price between {lower_price_bound} and {upper_price_bound} " \
+                + "group by transit.route, transit.type "
+        else:
+            query = "select transit.route, type, price, count(distinct site_name) as '# Connected Sites', count(take_date) as '# Transit Logged' "\
+                + "from transit, transit_connections, take_transit "\
+                + "where transit_connections.route = transit.route " \
+                + "and transit_connections.transit_type = transit.type "\
+                + "and take_transit.transit_type = transit.type "\
+                + "and take_transit.route= transit.route "\
+                + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{site}') "\
+                + f"and type = '{transit_type}' " \
+                + "group by transit.route, transit.type "
+
+
+
+        cursor = connection.cursor()
+        cursor.execute(query)
+        transit_data = [line for line in cursor]
+        for i in transit_data:
+            table_data.append([i["route"], i["type"], str(i["price"]), i["# Connected Sites"], i["# Transit Logged"]])
+        cursor.close()
+        self.hide()
+        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites", "# Transit Logged"], table_data)
+        self.table_view.setModel(self.table_model)
+        self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
+        self.show()
 
     def handleBack(self):
         self.close()
         self.parent.show()
 
     def handleCreate(self):
-        pass
-        # self.hide()
-        # self.admin_create_site = AdminCreateSite(self)
-        # self.admin_create_site.show()
-        # self.admin_create_site.raise_()
+        self.hide()
+        self.admin_create_transit = AdminCreateTransit(self)
+        self.admin_create_transit.show()
+        self.admin_create_transit.raise_()
 
     def handleEdit(self):
-        pass
-        # selected = len(self.table_view.selectedIndexes())
+        selected = len(self.table_view.selectedIndexes())
         # print(selected)
-        # row_index = self.table_view.currentIndex().row()
+        row_index = self.table_view.currentIndex().row()
         # print(row_index)
-        # if (not selected):
-        #     QMessageBox.warning(
-        #         self, 'Error', 'Please select a row of the table')
-        # else:
-        #     site_name = self.table_model.data[row_index][0]
-        #     self.hide()
-        #     self.admin_edit_site = AdminEditSite(self, site_name)
-        #     self.admin_edit_site.show()
-        #     self.admin_edit_site.raise_()
+        if (not selected):
+            QMessageBox.warning(
+                self, 'Error', 'Please select a row of the table')
+        else:
+            route = self.table_model.data[row_index][0]
+            transport_type = self.table_model.data[row_index][1]
+            self.hide()
+            self.admin_edit_transit = AdminEditTransit(self, route, transport_type)
+            self.admin_edit_transit.show()
+            self.admin_edit_transit.raise_()
 
 
 
@@ -420,7 +632,7 @@ class AdminEditSite(QWidget):
         self.hbox4.addWidget(self.manager_dropdown)
         self.vbox.addLayout(self.hbox4)
 
-        print(self.openeveryday_d)
+        # print(self.openeveryday_d)
 
         self.cb = QCheckBox('Open Every Day?', self)
         if (self.openeveryday_d == 'Yes'):
@@ -582,9 +794,9 @@ class AdminManageSite(QWidget):
 
     def handleEdit(self):
         selected = len(self.table_view.selectedIndexes())
-        print(selected)
+        # print(selected)
         row_index = self.table_view.currentIndex().row()
-        print(row_index)
+        # print(row_index)
         if (not selected):
             QMessageBox.warning(
                 self, 'Error', 'Please select a row of the table')
@@ -662,7 +874,7 @@ class AdminManageUser(QWidget):
         self.table_data = []
         for i in user_data:
             self.table_data.append([i["username"], i["email count"], i["user_type"], i["status"]])
-        pprint(self.table_data)
+        # pprint(self.table_data)
 
 
         cursor = connection.cursor()
@@ -674,7 +886,7 @@ class AdminManageUser(QWidget):
         emp_type_dict = {}
         for i in emp_data:
             emp_type_dict[i["username"]] = i["employee_type"]
-        print(emp_type_dict)
+        # print(emp_type_dict)
 
         admin_username_list = []
 
@@ -838,7 +1050,8 @@ class EmployeeManageProfile(QWidget):
         self.parent.show()
 
     def handleUpdate(self):
-        print(self.cb.checkState())
+        pass
+        # print(self.cb.checkState())
 
     def handleAdd(self):
         pass
@@ -1163,7 +1376,7 @@ class UserTakeTransit(QWidget):
             cursor.execute(query_check)
             same_day_check = [line for line in cursor]
             same_day = list(same_day_check[0].values())[0]
-            print(same_day)
+            # print(same_day)
             # print(same_day_check)
 
             cursor.close()
@@ -1969,7 +2182,7 @@ class RegisterEmpVisitor(QWidget):
                     + f"values ('{username}', '{phone}', '{address}', '{city}', " \
                     + f"'{state}', '{zipcode}', '{user_type}');"
 
-            print(query4)
+            # print(query4)
 
             cursor.execute(query4)
 
@@ -1979,7 +2192,7 @@ class RegisterEmpVisitor(QWidget):
 
             connection.commit()
             cursor.close()
-            print("succesful registration")
+            # print("succesful registration")
 
             QMessageBox.information(self, 'PyQt5 message', "Your registration was a success!", QMessageBox.Ok)
 
@@ -2132,14 +2345,14 @@ class RegisterEmployee(QWidget):
                     + f"values ('{username}', '{phone}', '{address}', '{city}', " \
                     + f"'{state}', '{zipcode}', '{user_type}');"
 
-            print(query4)
+            # print(query4)
 
             cursor.execute(query4)
 
 
             connection.commit()
             cursor.close()
-            print("succesful registration")
+            # print("succesful registration")
 
             QMessageBox.information(self, 'PyQt5 message', "Your registration was a success!", QMessageBox.Ok)
 
@@ -2224,7 +2437,7 @@ class RegisterVisitor(QWidget):
             cursor = connection.cursor()
             query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'User'," \
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
-            print(query)
+            # print(query)
             cursor.execute(query)
 
             for x in self.email_box.email_list:
@@ -2245,7 +2458,7 @@ class RegisterVisitor(QWidget):
 
             connection.commit()
             cursor.close()
-            print("succesful registration")
+            # print("succesful registration")
 
             QMessageBox.information(self, 'PyQt5 message', "Your registration was a success!", QMessageBox.Ok)
 
@@ -2348,7 +2561,7 @@ class RegisterUser(QWidget):
 
             connection.commit()
             cursor.close()
-            print("succesful registration")
+            # print("succesful registration")
 
             QMessageBox.information(self, 'PyQt5 message', "Your registration was a success!", QMessageBox.Ok)
 
@@ -2580,7 +2793,7 @@ class UserLogin(QWidget):
             cursor = connection.cursor()
             query = 'select status from email join user ' \
                 + f"using (username) where email = '{email}';"
-            print(query)
+            # print(query)
             cursor.execute(query)
             user_data = [line for line in cursor]
             status = user_data[0]['status']
@@ -2591,7 +2804,7 @@ class UserLogin(QWidget):
                 QMessageBox.warning(
                     self, 'Error', 'Your account registration has been declined approval')
             else:
-                print("login success")
+                # print("login success")
                 # self.close()
                 self.functionality(email)
 
@@ -2644,12 +2857,12 @@ class UserLogin(QWidget):
 
 
             if (emp_type == 'Admin' and not visitor):
-                print("admin functionality")
+                # print("admin functionality")
                 self.hide()
                 self.admin_func = AdminFunctionality(self, username)
                 self.admin_func.show()
             elif (emp_type == 'Admin' and visitor):
-                print("admin-visitor functionality")
+                # print("admin-visitor functionality")
                 self.hide()
                 self.admin_visitor_func = AdminVisitorFunctionality(self, username)
                 self.admin_visitor_func.show()
