@@ -147,6 +147,228 @@ def sqlInsertDeleteQuery(query):
 
 
 
+
+# SCREEN NUMBER 34
+class VisitorEventDetail(QWidget):
+    def __init__(self, parent, username, event_name, start_date, site_name):
+        super(VisitorEventDetail, self).__init__()
+        self.setWindowTitle("Event Detail")
+        self.parent = parent
+        self.event_name = event_name
+        self.start_date = start_date
+        self.site_name = site_name
+        self.username = username
+
+
+        self.vbox = QVBoxLayout()
+
+        query =  "select E.end_date, E.price, E.capacity - count(VE.username) as 'Ticket Remaining', description  "\
+            + "from event as E "\
+            + "join visit_event as VE "\
+            + "on E.name = VE.event_name "\
+            + "and E.start_date = VE.start_date "\
+            + "and E.site_name = VE.site_name "\
+            + f"where E.name = '{self.event_name}' "\
+            + f"and E.start_date = '{self.start_date}' "\
+            + f"and E.site_name = '{self.site_name}' "
+
+        data = sqlQueryOutput(query, ['end_date', 'price', 'Ticket Remaining', 'description'])
+        data = data[0]
+
+
+        self.hbox_list = []
+        hbox_contents = [
+            [('QLabel', ['Event: ']), ('QLabel', [self.event_name])],
+            [('QLabel', ['Site: ']), ('QLabel', [self.site_name])],
+            [('QLabel', ['Start Date: ']), ('QLabel', [self.start_date])],
+            [('QLabel', ['End Date: ']), ('QLabel', [f'{data[0]}'])],
+            [('QLabel', ['Price ($): ']), ('QLabel', [f'{data[1]}'])],
+            [('QLabel', ['Tickets Remaining: ']), ('QLabel', [f'{data[2]}'])],
+            [('QLabel', ['Description: '])],
+            [('QPlainTextEdit', [f'{data[3]}', True])]
+            ]
+
+        for i in hbox_contents:
+            (x, y) = createHBox(self, i)
+            self.vbox.addLayout(x)
+            self.hbox_list.append((x,y))
+
+        self.hbox_list1 = []
+        hbox_contents1 = [
+        [('QLabel', ["Visit Date"]), ('QLineEdit', []), ('QPushButton', ['Log Visit', 'handleLogVisit'])],
+        [('QPushButton', ['Back', 'handleBack'])]
+        ]
+        for i in hbox_contents1:
+            (x, y) = createHBox(self, i)
+            self.vbox.addLayout(x)
+            self.hbox_list1.append((x,y))
+
+        self.setLayout(self.vbox)
+
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+    def handleLogVisit(self):
+        end_date = self.hbox_list[3][1][1].text()
+        tickets_remaining = self.hbox_list[5][1][1].text()
+        log_date = self.hbox_list1[0][1][1].text()
+
+        date_check = valid_date_check(log_date, self.parent)
+
+        if date_check:
+
+            query = "select exists (select * from visit_event  "\
+                + f"where event_name = '{self.event_name}' "\
+                + f"and start_date = '{self.start_date}' "\
+                + f"and site_name = '{self.site_name}' "\
+                + f"and username = '{self.username}' "\
+                + f"and visit_date = '{log_date}') "
+            x = sqlQueryOutput(query)
+            already_visited = list(x[0].values())[0]
+
+            if (not tickets_remaining):
+                QMessageBox.warning(
+                    self, 'Error', 'There are no tickets remaining')
+            elif (log_date > end_date or log_date < self.start_date):
+                QMessageBox.warning(
+                    self, 'Error', 'Your visit must be during the dates of the event silly goose!')
+            elif (already_visited):
+                QMessageBox.warning(
+                    self, 'Error', 'You already visited on this day silly goose!')
+            else:
+
+                query = "insert into visit_event (username, event_name, start_date, site_name, visit_date) "\
+                    + f"values ('{self.username}', '{self.event_name}', '{self.start_date}', '{self.site_name}', '{log_date}') "
+
+                sqlInsertDeleteQuery(query)
+
+                QMessageBox.information(
+                    self, 'Success', "You successfully logged your visit!", QMessageBox.Ok)
+
+                self.parent.handleUpdateTable()
+                self.handleBack()
+
+
+
+
+# SCREEN NUMBER 33
+class VisitorExploreEvent(QWidget):
+    def __init__(self, parent, username):
+        super(VisitorExploreEvent, self).__init__()
+        self.setWindowTitle("Explore Event")
+        self.parent = parent
+        self.username = username
+
+        self.vbox = QVBoxLayout()
+
+        site_name_list = create_site_name_list()
+
+        self.hbox_list = []
+        hbox_contents = [
+            [('QLabel', ['Name: ']), ('QLineEdit', [])],
+            [('QLabel', ['Description Keyword: ']), ('QLineEdit', [])],
+            [('QLabel', ['Site: ']), ('QComboBox', [site_name_list])],
+            [('QLabel', ['Start Date: ']), ('QLineEdit', [])],
+            [('QLabel', ['End Date: ']), ('QLineEdit', [])],
+            [('QLabel', ['Total Visits Range: ']), ('QLineEdit', []), ('QLabel', [' -- ']), ('QLineEdit', [])],
+            [('QLabel', ['Ticket Price Range: ']), ('QLineEdit', []), ('QLabel', [' -- ']), ('QLineEdit', [])],
+            ]
+
+        for i in hbox_contents:
+            (x, y) = createHBox(self, i)
+            self.vbox.addLayout(x)
+            self.hbox_list.append((x,y))
+
+
+
+        self.cb_include_visited = QCheckBox("Include Visited?", self)
+        self.cb_include_visited.setChecked(False)
+        self.cb_include_soldout = QCheckBox("Include Sold Out Events?", self)
+        self.cb_include_soldout.setChecked(False)
+        self.vbox.addWidget(self.cb_include_visited)
+        self.vbox.addWidget(self.cb_include_soldout)
+
+        self.hbox_list1 = []
+        hbox_contents1 = [
+            [('QPushButton', ['Filter', 'handleFilter']), ('QPushButton', ['Event Detail', 'handleEventDetail'])],
+            ]
+
+        for i in hbox_contents1:
+            (x, y) = createHBox(self, i)
+            self.vbox.addLayout(x)
+            self.hbox_list1.append((x,y))
+
+
+        self.root_query = "select E.name, E.site_name, E.start_date, E.price, E.capacity - count(VE.username) as 'Ticket Remaining', "\
+            + "count(VE.username) as 'Total Visits',  "\
+            + f"count(case VE.username when '{self.username}' then 1 else null end) as 'My Visits' "\
+            + "from event as E "\
+            + "join visit_event as VE "\
+            + "on E.name = VE.event_name "\
+            + "and E.start_date = VE.start_date "\
+            + "and E.site_name = VE.site_name "
+
+
+
+        query = self.root_query + "group by E.name, E.start_date, E.site_name order by E.name"
+        self.table_rows = sqlQueryOutput(query, ['name', 'site_name', 'price', 'Ticket Remaining', 'Total Visits', 'My Visits'])
+        self.event_key_list = sqlQueryOutput(query, ['name', 'site_name', 'start_date'])
+        self.table_headers = ['Event Name', 'Site Name', 'Ticket Price', 'Ticket Remaining', 'Total Visits', 'My Visits']
+        self.table_model, self.table_view = createTable(self.table_headers, self.table_rows)
+        self.table_view.setColumnWidth(0, 250)
+        self.vbox.addWidget(self.table_view)
+
+
+        self.hbox_list1 = []
+        hbox_contents1 = [
+            [('QPushButton', ['Back', 'handleBack'])],
+            ]
+
+        for i in hbox_contents1:
+            (x, y) = createHBox(self, i)
+            self.vbox.addLayout(x)
+            self.hbox_list1.append((x,y))
+
+
+        self.setLayout(self.vbox)
+
+    def handleFilter(self):
+        pass
+        #TODO
+
+    def handleEventDetail(self):
+        selected = len(self.table_view.selectedIndexes())
+        row_index = self.table_view.currentIndex().row()
+        if (not selected):
+            QMessageBox.warning(
+                self, 'Error', 'Please select a row of the table')
+        else:
+            event_data = self.event_key_list[row_index]
+            self.hide()
+            self.visitor_event_detail = VisitorEventDetail(self, self.username, event_data[0], event_data[2], event_data[1])
+            self.visitor_event_detail.show()
+            self.visitor_event_detail.raise_()
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+
+    def handleUpdateTable(self, query=None):
+        if (query == None):
+            query = self.root_query + "group by E.name, E.start_date, E.site_name order by E.name"
+
+        self.table_rows = sqlQueryOutput(query, ['name', 'site_name', 'price', 'Ticket Remaining', 'Total Visits', 'My Visits'])
+        self.event_key_list = sqlQueryOutput(query, ['name', 'site_name', 'start_date'])
+
+        self.table_model = SimpleTableModel(self.table_headers, self.table_rows)
+        self.table_view.setModel(self.table_model)
+
+
+
+
 # SCREEN NUMBER 32
 class StaffEventDetail(QWidget):
     def __init__(self, parent, event_name, start_date, site_name):
@@ -2474,7 +2696,10 @@ class VisitorFunctionality(QWidget):
         pass
 
     def handleExploreEvent(self):
-        pass
+        self.hide()
+        self.visitor_explore_event = VisitorExploreEvent(self, self.username)
+        self.visitor_explore_event.show()
+        self.visitor_explore_event.raise_()
 
     def handleViewVisitHistory(self):
         pass
@@ -2560,7 +2785,10 @@ class EmpVisitorFunctionality(QWidget):
         pass
 
     def handleExploreEvent(self):
-        pass
+        self.hide()
+        self.visitor_explore_event = VisitorExploreEvent(self, self.username)
+        self.visitor_explore_event.show()
+        self.visitor_explore_event.raise_()
 
     def handleViewVisitHistory(self):
         pass
@@ -2709,12 +2937,6 @@ class ManagerFunctionality(QWidget):
         self.user_take_transit.show()
         self.user_take_transit.raise_()
 
-    def handleExploreSite(self):
-        pass
-
-    def handleExploreEvent(self):
-        pass
-
     def handleViewTransitHistory(self):
         self.hide()
         self.user_transit_history = UserTransitHistory(self, self.username)
@@ -2819,7 +3041,10 @@ class ManagerVisitorFunctionality(QWidget):
         pass
 
     def handleExploreEvent(self):
-        pass
+        self.hide()
+        self.visitor_explore_event = VisitorExploreEvent(self, self.username)
+        self.visitor_explore_event.show()
+        self.visitor_explore_event.raise_()
 
     def handleViewTransitHistory(self):
         self.hide()
@@ -2968,7 +3193,10 @@ class AdminVisitorFunctionality(QWidget):
         pass
 
     def handleExploreEvent(self):
-        pass
+        self.hide()
+        self.visitor_explore_event = VisitorExploreEvent(self, self.username)
+        self.visitor_explore_event.show()
+        self.visitor_explore_event.raise_()
 
     def handleViewTransitHistory(self):
         self.hide()
