@@ -46,7 +46,7 @@ CREATE PROCEDURE create_user (
  END //
 DELIMITER ;
 
-DROP PROCEDURE if exists create_user;
+DROP PROCEDURE if exists create_visitor;
 DELIMITER //
 CREATE PROCEDURE create_visitor (
     IN inusername VARCHAR(20),
