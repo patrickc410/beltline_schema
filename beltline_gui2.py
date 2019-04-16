@@ -37,6 +37,9 @@ from PyQt5.QtGui import (
     QPixmap)
 
 
+#TODO column sorting?
+
+
 def is_float(s):
     try:
         float(s)
@@ -94,8 +97,11 @@ def createHBox(parent, list_of_tuples):
         elif (tup[0] == 'QPlainTextEdit'):
             if (len(tup[1]) == 0):
                 text_edit = QPlainTextEdit()
-            else:
+            elif (len(tup[1]) == 1):
                 text_edit = QPlainTextEdit(tup[1][0])
+            elif (len(tup[1]) == 2):
+                text_edit = QPlainTextEdit(tup[1][0])
+                text_edit.setReadOnly(tup[1][1])
             hbox.addWidget(text_edit)
             hbox_list.append(text_edit)
     return (hbox, hbox_list)
@@ -123,11 +129,101 @@ def sqlQueryOutput(query, alist=None):
         return output_list
 
 
-def sqlInsertQuery(query):
+def sqlInsertDeleteQuery(query):
     cursor = connection.cursor()
     cursor.execute(query)
     connection.commit()
     cursor.close()
+
+
+
+# SCREEN NUMBER 27
+class ManagerManageStaff(QWidget):
+    def __init__(self, parent, username):
+        super(ManagerManageStaff, self).__init__()
+        self.setWindowTitle("Create Event")
+        self.parent = parent
+        self.username = username
+
+        self.vbox = QVBoxLayout()
+
+        site_name_list = create_site_name_list()
+
+        self.hbox_list = []
+        hbox_contents = [
+            [('QLabel', ['Site: ']), ('QComboBox', [site_name_list])],
+            [('QLabel', ['First Name: ']), ('QLineEdit', [])],
+            [('QLabel', ['Last Name: ']), ('QLineEdit', [])],
+            [('QLabel', ['Start Date: ']), ('QLineEdit', [])],
+            [('QLabel', ['End Date: ']), ('QLineEdit', [])],
+            [('QPushButton', ['Filter', 'handleFilter'])],
+            ]
+        for i in hbox_contents:
+            (x, y) = createHBox(self, i)
+            self.vbox.addLayout(x)
+            self.hbox_list.append((x,y))
+
+        self.table_model, self.table_view = createTable(["Staff Name", '# Event Shifts'], [['', '']])
+        self.table_view.setColumnWidth(0, 100)
+        self.table_view.setColumnWidth(1, 100)
+        self.vbox.addWidget(self.table_view)
+
+
+
+        self.hbox_list1 = []
+        hbox_contents1 = [
+        [('QPushButton', ['Back', 'handleBack'])],
+        ]
+        for i in hbox_contents1:
+            (x, y) = createHBox(self, i)
+            self.vbox.addLayout(x)
+            self.hbox_list1.append((x,y))
+
+
+        self.setLayout(self.vbox)
+
+    def handleFilter(self):
+        pass
+        #TODO
+        site_name = self.hbox_list[0][1][1].currentText()
+        first_name = self.hbox_list[1][1][1].text()
+        last_name = self.hbox_list[2][1][1].text()
+        start_date = self.hbox_list[3][1][1].text()
+        end_date = self.hbox_list[4][1][1].text()
+
+        date_pattern = r'[\d]{4}-[0,1][\d]{1}-[0,1,2,3][\d]{1}'
+        date_check1 = re.fullmatch(date_pattern, start_date)
+        date_check2 = re.fullmatch(date_pattern, end_date)
+
+        if (end_date == '' or start_date == ''):
+            QMessageBox.warning(
+                self, 'Error', 'Please fill in the date fields before filtering')
+        elif (date_check1 == None or date_check2 == None):
+            QMessageBox.warning(
+                self, 'Error', 'Please enter valid dates in the form YYYY-MM-DD')
+        else:
+            fname_filter = (not (first_name == ''))
+            lname_filter = (not (last_name == ''))
+
+            if ((not fname_filter) and (not lname_filter)):
+                query = '' #TODO
+            elif (not fname_filter):
+                query = '' #TODO
+            elif (not lname_filter):
+                query = '' #TODO
+            else:
+                query = '' #TODO
+
+            x = sqlQueryOutput(query, [])
+
+            self.table_model = SimpleTableModel(["Staff Name", '# Event Shifts'], x)
+            self.table_view.setModel(self.table_model)
+
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
 
 
 
@@ -197,6 +293,7 @@ class ManagerCreateEvent(QWidget):
 
     def handleBack(self):
         self.close()
+        self.parent.handleUpdateTable()
         self.parent.show()
 
     def handleCreate(self):
@@ -310,18 +407,17 @@ class ManagerCreateEvent(QWidget):
                         + f"values ('{event_name}', '{start_date}', '{self.site_name}',  "\
                         + f"'{end_date}', {price}, {capacity}, {min_staff_req}, '{description}') "
 
-                    sqlInsertQuery(query)
+                    sqlInsertDeleteQuery(query)
 
                     for username in ESA_list:
                         query = "insert into event_staff_assignments (staff_user, event_name, start_date, site_name) "\
                             + f"values ('{username}', '{event_name}', '{start_date}', '{self.site_name}') "
-                        sqlInsertQuery(query)
+                        sqlInsertDeleteQuery(query)
 
                     QMessageBox.information(
                         self, 'Success', "You successfully created an event!", QMessageBox.Ok)
 
-                    self.close()
-                    self.parent.show()
+                    self.handleBack()
 
 
 
@@ -359,13 +455,15 @@ class ManagerCreateEvent(QWidget):
 
 # SCREEN NUMBER 26
 class ManagerViewEditEvent(QWidget):
-    def __init__(self, parent, event_name, site_name, start_date):
+    def __init__(self, parent, event_name, site_name, start_date, readOnly=False):
         super(ManagerViewEditEvent, self).__init__()
         self.setWindowTitle("View/Edit Event")
         self.parent = parent
         self.event_name = event_name
         self.start_date = start_date
         self.site_name = site_name
+        self.readOnly = readOnly
+        print(event_name, start_date, site_name)
 
         query1 = "select name, price, E.start_date, E.end_date, E.min_staff_req, capacity, description "\
             + "from event as E "\
@@ -396,33 +494,79 @@ class ManagerViewEditEvent(QWidget):
             [('QLabel', ['Start Date: ']), ('QLabel', [f'{data1[2]}'])],
             [('QLabel', ['End Date: ']), ('QLabel', [f'{data1[3]}'])],
             [('QLabel', ['Description: '])],
-            [('QPlainTextEdit', [f'{data1[6]}'])],
+            [('QPlainTextEdit', [f'{data1[6]}', self.readOnly])],
             ]
+
+        self.end_date = data1[3]
 
         for i in hbox_contents:
             (x, y) = createHBox(self, i)
             self.vbox.addLayout(x)
             self.hbox_list.append((x,y))
 
-        # query = "select user.username, concat(user.fname, ' ', user.lname) as 'full_name' "\
-        #     + "from employee join user using (username) "\
-        #     + "where employee_type = 'Staff' "
-        # staff_username_list = sqlQueryOutput(query, ["username"])
-        # staff_name_list = sqlQueryOutput(query, ["full_name"])
+        query = "select staff_user, concat(user.fname, ' ', user.lname) as 'full_name'  "\
+            + "from event_staff_assignments as ESA "\
+            + "join user on ESA.staff_user = user.username "\
+            + f"where event_name = '{self.event_name}' "\
+            + f"and start_date = '{self.start_date}' "\
+            + f"and site_name = '{self.site_name}' "\
+            + "order by staff_user "
 
-        # self.hbox_list1 = []
-        # hbox_contents1 = [
-        #     [('QLabel', ['Assign Staff']), ('QPushButton', ['Show Staff Available During Given Dates', 'handleFilterStaff']),]
-        #     ]
-        # for i in hbox_contents1:
-        #     (x, y) = createHBox(self, i)
-        #     self.vbox.addLayout(x)
-        #     self.hbox_list1.append((x,y))
+        self.staff_username_list = sqlQueryOutput(query, ["staff_user"])
+        self.staff_name_list = sqlQueryOutput(query, ["full_name"])
+        for i in self.staff_name_list:
+            i.append('Yes')
+
+        query2 = "select EMP.username, concat(U.fname, ' ', U.lname) as 'full_name' from employee as EMP "\
+            + "join user as U using (username) "\
+            + "where EMP.employee_type = 'Staff' "\
+            + "and EMP.username not in ( "\
+            + "select distinct staff_user from event_staff_assignments as ESA "\
+            + "join event as E "\
+            + "on E.name = ESA.event_name "\
+            + "and E.site_name = ESA.site_name "\
+            + "and E.start_date = ESA.start_date "\
+            + f"where ((E.start_date >= '{self.start_date}' and E.start_date <= '{self.end_date}') "\
+            + f"or (E.end_date >= '{self.start_date}' and E.end_date <= '{self.end_date}'))) "\
+            + "order by EMP.username "
+
+        self.staff_username_list += sqlQueryOutput(query2, ['username'])
+        self.staff_name_list += sqlQueryOutput(query2, ["full_name"])
+        for i in self.staff_name_list:
+            if len(i) == 1:
+                i.append('No')
 
 
-        # self.table_model, self.table_view = createTable(["Name"], staff_name_list, singleSelection=False)
-        # self.table_view.setColumnWidth(0, 400)
-        # self.vbox.addWidget(self.table_view)
+        # pprint(self.staff_name_list)
+        self.table_model, self.table_view = createTable(["Name", "Assigned?"], self.staff_name_list, singleSelection=False)
+        self.table_view.setColumnWidth(0, 150)
+        self.table_view.setColumnWidth(1, 150)
+        self.vbox.addWidget(self.table_view)
+
+
+        self.hbox_list1 = []
+        hbox_contents1 = [
+            [('QLabel', ['Daily Visits Range: ']), ('QLineEdit', []), ('QLabel', [' -- ']), ('QLineEdit', [])],
+            [('QLabel', ['Daily Revenue Range: ']), ('QLineEdit', []), ('QLabel', [' -- ']), ('QLineEdit', [])],
+            ]
+        for i in hbox_contents1:
+            (x, y) = createHBox(self, i)
+            self.vbox.addLayout(x)
+            self.hbox_list1.append((x,y))
+
+        query = "select VE.visit_date, count(username) as 'Daily Visits', E.price * count(username) as 'Daily Revenue' "\
+            + "from visit_event as VE "\
+            + "join event as E "\
+            + "on E.name = VE.event_name "\
+            + "and E.start_date = VE.start_date "\
+            + "and E.site_name = VE.site_name "\
+            + f"where E.name = '{self.event_name}' "\
+            + f"and E.start_date = '{self.start_date}' "\
+            + f"and E.site_name = '{self.site_name}' "\
+            + "group by VE.visit_date "
+        self.daily_data = sqlQueryOutput(query, ['visit_date', 'Daily Visits', 'Daily Revenue'])
+        self.table_model2, self.table_view2 = createTable(['Date', 'Daily Visits', 'Daily Revenue'], self.daily_data)
+        self.vbox.addWidget(self.table_view2)
 
         self.hbox_list2 = []
         hbox_contents2 = [
@@ -433,6 +577,8 @@ class ManagerViewEditEvent(QWidget):
             self.vbox.addLayout(x)
             self.hbox_list2.append((x,y))
 
+        #TODO - filter, daily visits range, daily revenue range boxes
+
         self.setLayout(self.vbox)
 
     def handleBack(self):
@@ -442,10 +588,11 @@ class ManagerViewEditEvent(QWidget):
     def handleUpdate(self):
         pass
         #TODO
-
-    def handleFilterStaff(self):
-        pass
-        #TODO
+        if (self.readOnly):
+            QMessageBox.warning(
+                self, 'Error', 'You can only update events at the site that you manage')
+        else:
+            pass
 
 
 
@@ -482,7 +629,7 @@ class ManagerManageEvent(QWidget):
             self.hbox_list.append((x,y))
 
 
-        query = "select E.name, count(staff_user) as 'Staff Count', datediff(E.end_date, E.start_date) as 'Duration (days)', "\
+        query = "select E.name, count(distinct staff_user) as 'Staff Count', datediff(E.end_date, E.start_date) + 1 as 'Duration (days)', "\
             + "count(VE.username) as 'Total Visits', E.price * count(VE.username) as 'Total Revenue ($)' "\
             + "from event as E  "\
             + "join event_staff_assignments as ESA "\
@@ -537,17 +684,78 @@ class ManagerManageEvent(QWidget):
                 self, 'Error', 'Please select a row of the table')
         else:
             event_data = self.event_key_list[row_index]
+            query = "select exists (select manager_user from site "\
+                f"where name = '{event_data[1]}' "\
+                f"and manager_user = '{self.username}') "
+            x = sqlQueryOutput(query)
+            manager_check = list(x[0].values())[0]
+            if (not manager_check):
+                readOnly = True
+            else:
+                readOnly = False
             self.hide()
-            self.admin_edit_transit = ManagerViewEditEvent(self, event_data[0], event_data[1], event_data[2])
+            self.admin_edit_transit = ManagerViewEditEvent(self, event_data[0], event_data[1], event_data[2], readOnly)
             self.admin_edit_transit.show()
             self.admin_edit_transit.raise_()
 
     def handleDelete(self):
         pass
 
+        selected = len(self.table_view.selectedIndexes())
+        row_index = self.table_view.currentIndex().row()
+        if (not selected):
+            QMessageBox.warning(
+                self, 'Error', 'Please select a row of the table')
+        else:
+            event_data = self.event_key_list[row_index]
+            query = "select exists (select manager_user from site "\
+                f"where name = '{event_data[1]}' "\
+                f"and manager_user = '{self.username}') "
+            x = sqlQueryOutput(query)
+            manager_check = list(x[0].values())[0]
+            if (not manager_check):
+                QMessageBox.warning(
+                self, 'Error', 'You can only delete events that are at the site that you manage')
+            else:
+                query = f"delete from event where name = '{event_data[0]}' and "\
+                    + f"start_date = '{event_data[2]}' and site_name = '{event_data[1]}'"
+                sqlInsertDeleteQuery(query)
+                QMessageBox.information(
+                    self, 'Success', "You successfully deleted the selected event!", QMessageBox.Ok)
+                self.handleUpdateTable()
+
+
     def handleBack(self):
         self.close()
         self.parent.show()
+
+    def handleUpdateTable(self, query=None):
+        if (query == None):
+            query = "select E.name, count(distinct staff_user) as 'Staff Count', datediff(E.end_date, E.start_date) + 1 as 'Duration (days)', "\
+                + "count(VE.username) as 'Total Visits', E.price * count(VE.username) as 'Total Revenue ($)' "\
+                + "from event as E  "\
+                + "join event_staff_assignments as ESA "\
+                + "on E.name = ESA.event_name "\
+                + "and E.site_name = ESA.site_name "\
+                + "and E.start_date = ESA.start_date "\
+                + "left outer join visit_event as VE "\
+                + "on E.name = VE.event_name "\
+                + "and E.start_date = VE.start_date "\
+                + "and E.site_name = VE.site_name "\
+                + "group by E.name, E.start_date, E.site_name "\
+                + "order by E.name"
+
+        table_rows = sqlQueryOutput(query, ["name", "Staff Count", "Duration (days)", "Total Visits", "Total Revenue ($)"])
+        headers = ["Name", "Staff Count", "Duration (days)", "Total Visits", "Total Revenue ($)"]
+
+        query2 = "select E.name, E.site_name, E.start_date from event as E order by name"
+
+        self.event_key_list = sqlQueryOutput(query2, ["name", 'site_name', 'start_date'])
+
+        self.table_model = SimpleTableModel(headers, table_rows)
+        self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
+        self.table_view.setModel(self.table_model)
+
 
 
 
@@ -622,7 +830,7 @@ class AdminCreateTransit(QWidget):
             transit_check = [line for line in cursor]
             cursor.close()
             unique_transit = list(transit_check[0].values())[0]
-            print(unique_transit)
+            # print(unique_transit)
             if (unique_transit):
                 QMessageBox.warning(
                         self, 'Error', 'The transit you are trying to create already exists')
@@ -2196,7 +2404,10 @@ class ManagerFunctionality(QWidget):
         self.manager_manage_event.raise_()
 
     def handleViewStaff(self):
-        pass
+        self.hide()
+        self.manager_manage_staff = ManagerManageStaff(self, self.username)
+        self.manager_manage_staff.show()
+        self.manager_manage_staff.raise_()
 
     def handleViewSiteReport(self):
         pass
@@ -2296,7 +2507,10 @@ class ManagerVisitorFunctionality(QWidget):
         self.manager_manage_event.raise_()
 
     def handleViewStaff(self):
-        pass
+        self.hide()
+        self.manager_manage_staff = ManagerManageStaff(self, self.username)
+        self.manager_manage_staff.show()
+        self.manager_manage_staff.raise_()
 
     def handleViewSiteReport(self):
         pass
