@@ -1,5 +1,5 @@
 -- screen 25 display
-select E.name as 'Name', count(distinct staff_user) as 'Staff Count', datediff(E.end_date, E.start_date) as 'Duration (days)',
+select E.name as 'Name', count(distinct staff_user) as 'Staff Count', datediff(E.end_date, E.start_date) + 1 as 'Duration (days)',
 count(VE.username) as 'Total Visits', E.price * count(VE.username) as 'Total Revenue ($)'
 from event as E
 join event_staff_assignments as ESA
@@ -157,3 +157,50 @@ insert into event_staff_assignments (staff_user, event_name, start_date, site_na
 values ('{username}', '{event_name}', '{start_date}', '{site_name}')
 
 
+
+-- screen 28 filter
+select U.username, concat(U.fname, ' ', U.lname) as 'full_name', count(event_name) as '# Event Shifts'
+from user as U
+join event_staff_assignments as ESA
+on U.username = ESA.staff_user
+join event as E
+on E.name = ESA.event_name
+and E.site_name = ESA.site_name
+and E.start_date = ESA.start_date
+where ((E.start_date >= '{start_date}' and E.start_date <= '{end_date}')
+or (E.end_date >= '{start_date}' and E.end_date <= '{end_date}'))
+group by U.username
+order by U.lname
+
+
+
+
+
+-- screen 32 display
+select end_date, datediff(end_date, start_date) + 1 as 'Duration (days)',
+capacity, price, description from event
+where name = 'Bus Tour'
+and start_date = '2019-02-01'
+and site_name = 'Inman Park'
+
+
+-- screen 32 display: staff assigned
+select concat(U.fname, ' ', U.lname) as 'full_name'
+from user as U join event_staff_assignments as ESA
+on U.username = ESA.staff_user
+where ESA.event_name = 'Bus Tour'
+and ESA.start_date = '2019-02-01'
+and ESA.site_name = 'Inman Park'
+
+
+
+-- screen 33 display, before filters
+select E.name, E.site_name, E.price, E.capacity - count(VE.username) as 'Ticket Remaining',
+count(VE.username) as 'Total Visits',
+count(case VE.username when 'mary.smith' then 1 else null end) as 'My Visits'
+from event as E
+join visit_event as VE
+on E.name = VE.event_name
+and E.start_date = VE.start_date
+and E.site_name = VE.site_name
+group by E.name, E.start_date, E.site_name
