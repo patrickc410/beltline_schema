@@ -7,7 +7,7 @@ on T.route = TT.route
 and T.type = TT.transit_type
 where TT.username = 'manager2'
 
--- screen 16 all filters applied 
+-- screen 16 all filters applied
 select TT.take_date, TT.route, TT.transit_type, T.price
 from take_transit as TT
 join transit as T
@@ -43,8 +43,8 @@ where phone = '1234567890')
 delete from email where email = '{i}'
 
 -- screen 17 add emails
-insert into email (username, email) 
-values ('{self.username_d}', '{i}') 
+insert into email (username, email)
+values ('{self.username_d}', '{i}')
 
 -- screen 17 delete from visitor_list
 delete from visitor_list where username = ''
@@ -52,6 +52,41 @@ delete from visitor_list where username = ''
 -- screen 17 insert into visitor_list
 insert into visitor_list (username) values ('')
 
+
+
+
+
+
+-- screen 18, temporary table
+drop temporary table if exists s18_table;
+create temporary table s18_table
+select U.username, count(E.email) as 'email count',
+(case U.user_type when 'User' then 'User'
+when 'Visitor' then 'Visitor'
+when 'Employee' then (select employee_type from employee where username = U.username)
+else null end) as 'user_type', U.status
+from user as U
+join email as E
+using (username)
+left outer join employee as EMP
+using (username)
+group by U.username;
+
+-- screen 18, initialize table view
+select * from s18_table
+where user_type <> 'Admin'
+
+
+-- screen 18, with filters
+select * from s18_table
+where user_type <> 'Admin'
+and user_type = 'Manager'
+and status = 'Pending'
+and username = 'manager1'
+
+
+-- screen 18 approve user
+ update user set status = 'Approved' where username = ''
 
 
 
@@ -267,7 +302,7 @@ order by E.name
 
 
 -- screen 34 display
-select E.end_date, E.price, E.capacity - count(VE.username) as 'Ticket Remaining', description 
+select E.end_date, E.price, E.capacity - count(VE.username) as 'Ticket Remaining', description
 from event as E
 join visit_event as VE
 on E.name = VE.event_name
