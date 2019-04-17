@@ -40,6 +40,17 @@ from PyQt5.QtGui import (
 #TODO column sorting?
 
 
+def valid_email_check(astring, parent):
+    email_format = r'\S+@\S+\.\S+'
+    email_check = re.fullmatch(email_format, astring)
+    if (email_check == None):
+        QMessageBox.warning(
+            self.parent, 'Error', 'Please enter a valid email address')
+        return False
+    else:
+        return True
+
+
 def valid_date_check(astring, parent):
     date_pattern = r'[\d]{4}-[0,1][\d]{1}-[0,1,2,3][\d]{1}'
     date_check1 = re.fullmatch(date_pattern, astring)
@@ -148,6 +159,75 @@ def sqlInsertDeleteQuery(query):
 
 
 
+# SCREEN NUMBER 35
+class VisitorExploreSite(QWidget):
+    def __init__(self, parent, username):
+        super(VisitorExploreSite, self).__init__()
+        self.setWindowTitle("Event Detail")
+        self.parent = parent
+        self.username = username
+
+        site_name_list = create_site_name_list()
+        site_name_list.insert(0, '--ALL--')
+
+        self.hbox_list = []
+        hbox_contents = [
+            [('QLabel', ['Name: ']), ('QComboBox', site_name_list)],
+            [('QLabel', ['Open Every Day: ']), ('QComboBox', ['--ALL--', 'Yes', 'No'])],
+            [('QLabel', ['Start Date: ']), ('QLineEdit', [])],
+            [('QLabel', ['End Date: ']), ('QLineEdit', [])],
+            [('QLabel', ['Total Visits Range: ']), ('QLineEdit', []), ('QLabel', [' -- ']), ('QLineEdit', [])],
+            [('QLabel', ['Event Count Range: ']), ('QLineEdit', []), ('QLabel', [' -- ']), ('QLineEdit', [])],
+            ]
+
+        for i in hbox_contents:
+            (x, y) = createHBox(self, i)
+            self.vbox.addLayout(x)
+            self.hbox_list.append((x,y))
+
+        self.cb_include_visited = QCheckBox("Include Visited?", self)
+        self.cb_include_visited.setChecked(True)
+        self.vbox.addWidget(self.cb_include_visited)
+
+        self.hbox_list1 = []
+        hbox_contents1 = [
+            [('QPushButton', ['Filter', 'handleFilter']), ('QPushButton', ['Site Detail', 'handleSiteDetail']), ('QPushButton', ['Transit Detail', 'handleTransitDetail'])],
+            ]
+
+        for i in hbox_contents1:
+            (x, y) = createHBox(self, i)
+            self.vbox.addLayout(x)
+            self.hbox_list1.append((x,y))
+
+        self.root_query = ''
+
+
+        query = self.root_query + "group by E.name, E.start_date, E.site_name order by E.name"
+        self.table_rows = sqlQueryOutput(query, ['name', 'site_name', 'price', 'Ticket Remaining', 'Total Visits', 'My Visits'])
+        # self.event_key_list = sqlQueryOutput(query, ['name', 'site_name', 'start_date'])
+        self.table_headers = ['Site Name', 'Event Count', 'Total Visits', 'My Visits']
+        self.table_model, self.table_view = createTable(self.table_headers, self.table_rows)
+        self.vbox.addWidget(self.table_view)
+
+
+        self.hbox_list1 = []
+        hbox_contents1 = [
+            [('QPushButton', ['Back', 'handleBack'])],
+            ]
+
+        for i in hbox_contents1:
+            (x, y) = createHBox(self, i)
+            self.vbox.addLayout(x)
+            self.hbox_list1.append((x,y))
+
+
+        self.setLayout(self.vbox)
+
+
+
+
+
+
 # SCREEN NUMBER 34
 class VisitorEventDetail(QWidget):
     def __init__(self, parent, username, event_name, start_date, site_name):
@@ -215,7 +295,7 @@ class VisitorEventDetail(QWidget):
         tickets_remaining = self.hbox_list[5][1][1].text()
         log_date = self.hbox_list1[0][1][1].text()
 
-        date_check = valid_date_check(log_date, self.parent)
+        date_check = valid_date_check(log_date, self)
 
         if date_check:
 
@@ -253,6 +333,7 @@ class VisitorEventDetail(QWidget):
 
 
 
+
 # SCREEN NUMBER 33
 class VisitorExploreEvent(QWidget):
     def __init__(self, parent, username):
@@ -281,12 +362,10 @@ class VisitorExploreEvent(QWidget):
             self.vbox.addLayout(x)
             self.hbox_list.append((x,y))
 
-
-
         self.cb_include_visited = QCheckBox("Include Visited?", self)
-        self.cb_include_visited.setChecked(False)
+        self.cb_include_visited.setChecked(True)
         self.cb_include_soldout = QCheckBox("Include Sold Out Events?", self)
-        self.cb_include_soldout.setChecked(False)
+        self.cb_include_soldout.setChecked(True)
         self.vbox.addWidget(self.cb_include_visited)
         self.vbox.addWidget(self.cb_include_soldout)
 
@@ -317,7 +396,7 @@ class VisitorExploreEvent(QWidget):
         self.event_key_list = sqlQueryOutput(query, ['name', 'site_name', 'start_date'])
         self.table_headers = ['Event Name', 'Site Name', 'Ticket Price', 'Ticket Remaining', 'Total Visits', 'My Visits']
         self.table_model, self.table_view = createTable(self.table_headers, self.table_rows)
-        self.table_view.setColumnWidth(0, 250)
+        # self.table_view.setColumnWidth(0, 250)
         self.vbox.addWidget(self.table_view)
 
 
@@ -510,13 +589,11 @@ class StaffViewSchedule(QWidget):
 
         # if (start_date == ''
 
-        # start_date_check = valid_date_check(start_date)
-        # end_date_check = valid_date_check(end_date)
+        # start_date_check = valid_date_check(start_date, self)
+        # end_date_check = valid_date_check(end_date, self)
 
 
     def handleViewEvent(self):
-        pass
-        #TODO
         selected = len(self.table_view.selectedIndexes())
         row_index = self.table_view.currentIndex().row()
         if (not selected):
@@ -697,6 +774,8 @@ class ManagerManageStaff(QWidget):
             fname_filter = (not (first_name == ''))
             lname_filter = (not (last_name == ''))
 
+            #TODO - site filter
+
             query = "select U.username, concat(U.fname, ' ', U.lname) as 'full_name', count(event_name) as '# Event Shifts'  "\
                 + "from user as U "\
                 + "join event_staff_assignments as ESA "\
@@ -708,14 +787,11 @@ class ManagerManageStaff(QWidget):
                 + f"where ((E.start_date >= '{start_date}' and E.start_date <= '{end_date}') "\
                 + f"or (E.end_date >= '{start_date}' and E.end_date <= '{end_date}')) "\
 
-            if ((not fname_filter) and lname_filter):
-                query = query + f"and U.lname = '{last_name}' "
-            elif ((not lname_filter) and fname_filter):
+
+            if (fname_filter):
                 query = query + f"and U.fname = '{first_name}' "
-            elif (fname_filter and lname_filter):
-                query = query \
-                    + f"and U.lname = '{last_name}' "\
-                    + f"and U.fname = '{first_name}' "
+            if (lname_filter):
+                query = query + f"and U.lname = '{last_name}' "
 
             query = query + "group by U.username order by U.lname"
 
@@ -1203,8 +1279,6 @@ class ManagerManageEvent(QWidget):
             self.admin_edit_transit.raise_()
 
     def handleDelete(self):
-        pass
-
         selected = len(self.table_view.selectedIndexes())
         row_index = self.table_view.currentIndex().row()
         if (not selected):
@@ -2208,6 +2282,7 @@ class EmployeeManageProfile(QWidget):
         self.email_list = []
         for i in email_data:
             self.email_list.append([i["email"]])
+        self.original_email_list = self.email_list
         cursor.close()
         # self.email_count = len(self.email_list)
 
@@ -2255,10 +2330,11 @@ class EmployeeManageProfile(QWidget):
         self.hbox1.addWidget(self.add_btn)
         self.vbox.addLayout(self.hbox1)
 
+        query = f"select exists (select * from visitor_list where username = '{self.username_d}')"
+        x = sqlQueryOutput(query)
+        self.is_visitor = list(x[0].values())[0]
         self.cb = QCheckBox('Visitor?', self)
-        # self.cb.move(20, 20)
-        self.cb.toggle()
-        # self.cb.stateChanged.connect(self.changeTitle)
+        self.cb.setChecked(self.is_visitor)
         self.vbox.addWidget(self.cb)
 
         self.buttonBack = QPushButton('Back', self)
@@ -2272,6 +2348,9 @@ class EmployeeManageProfile(QWidget):
         self.form_group_box3.setLayout(self.form_layout3)
         self.vbox.addWidget(self.form_group_box3)
 
+        self.added_emails = []
+        self.deleted_emails = []
+
         self.setLayout(self.vbox)
 
     def handleBack(self):
@@ -2279,14 +2358,104 @@ class EmployeeManageProfile(QWidget):
         self.parent.show()
 
     def handleUpdate(self):
-        pass
-        # print(self.cb.checkState())
+        visitor_checked = self.cb.checkState()
+
+        phone = self.phone.text()
+        fname = self.firstname.text()
+        lname = self.lastname.text()
+
+        if (len(self.email_list) == 0):
+            QMessageBox.warning(
+                self, 'Error', 'You must have at least one email address linked to your account')
+            return
+
+        if (phone != self.phone_d):
+            query = f"select exists (select * from employee where phone = '{phone}')"
+            x = sqlQueryOutput(query)
+            not_unique_phone = list(x[0].values())[0]
+            if (not_unique_phone):
+                QMessageBox.warning(
+                self, 'Error', 'The phone number you have entered is already taken by an existing user')
+                return
+            query = f"update employee set phone = '{phone}' where username='{self.username_d}'"
+            sqlInsertDeleteQuery(query)
+
+        if (fname != self.fname_d):
+            query = f"update user set fname = '{fname}' where username = '{self.username_d}'"
+            sqlInsertDeleteQuery(query)
+
+        if (lname != self.lname_d):
+            query = f"update user set lname = '{lname}' where username = '{self.username_d}'"
+            sqlInsertDeleteQuery(query)
+
+
+        if (len(self.deleted_emails) > 0):
+            for i in self.deleted_emails:
+                query = f"delete from email where email = '{i}'"
+                sqlInsertDeleteQuery(query)
+
+        if (len(self.added_emails) > 0):
+            for i in self.added_emails:
+                query = "insert into email (username, email) "\
+                    + f"values ('{self.username_d}', '{i}') "
+                sqlInsertDeleteQuery(query)
+
+        if (visitor_checked and not self.is_visitor):
+            query = f"insert into visitor_list (username) values ('{self.username_d}')"
+            sqlInsertDeleteQuery(query)
+        elif (not visitor_checked and self.is_visitor):
+            query = f"delete from visitor_list where username = '{self.username_d}'"
+            sqlInsertDeleteQuery(query)
+
+        QMessageBox.information(self, 'Congrats!', "You successfully updated your profile!", QMessageBox.Ok)
+        self.close()
+        self.parent.show()
+
+
 
     def handleAdd(self):
-        pass
+        curr_email = self.email.text()
+        if (curr_email == ''):
+            QMessageBox.warning(
+                self, 'Error', 'Please enter an email address to add')
+            return
+        if (valid_email_check(curr_email, self)):
+            query = f"select exists (select * from email where email = '{curr_email}')"
+            x = sqlQueryOutput(query)
+            not_unique = list(x[0].values())[0]
+
+            if (not_unique):
+                QMessageBox.warning(
+                self, 'Error', 'This email address is already linked to an existing user')
+                return
+            if (curr_email in self.added_emails):
+                QMessageBox.warning(
+                self, 'Error', 'You have already added this email address')
+                return
+
+            self.added_emails.append(curr_email)
+            self.email_list.append([curr_email])
+
+            self.table_model = SimpleTableModel(["Email"], self.email_list)
+            self.table_view.setModel(self.table_model)
+
+
 
     def handleDelete(self):
-        pass
+        selected = len(self.table_view.selectedIndexes())
+        row_index = self.table_view.currentIndex().row()
+        if (not selected):
+            QMessageBox.warning(
+                self, 'Error', 'Please select a row of the table')
+        else:
+            email_to_delete = self.table_model.data[row_index][0]
+            if (email_to_delete in self.added_emails):
+                self.added_emails.remove(email_to_delete)
+            elif ([email_to_delete] in self.original_email_list):
+                self.deleted_emails.append(email_to_delete)
+            self.email_list.remove([email_to_delete])
+            self.table_model = SimpleTableModel(["Email"], self.email_list)
+            self.table_view.setModel(self.table_model)
 
 
 
@@ -2345,7 +2514,16 @@ class UserTransitHistory(QWidget):
         self.filter_btn.clicked.connect(self.handleFilter)
         self.vbox.addWidget(self.filter_btn)
 
-        self.table_model = SimpleTableModel(["Date", "Route", "Transport Type", "Price"], [["", "", "", ""]])
+        self.root_query = "select TT.take_date, TT.route, TT.transit_type, T.price "\
+            + "from take_transit as TT "\
+            + "join transit as T "\
+            + "on T.route = TT.route "\
+            + "and T.type = TT.transit_type "
+        query = self.root_query + f"where TT.username = '{self.username}' order by TT.take_date"
+        self.curr_query = query
+        table_rows = sqlQueryOutput(query, ['take_date', 'route', 'transit_type', 'price'])
+
+        self.table_model = SimpleTableModel(["Date", "Route", "Transport Type", "Price"], table_rows)
         self.table_view = QTableView()
         self.table_view.setModel(self.table_model)
         self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
@@ -2362,7 +2540,48 @@ class UserTransitHistory(QWidget):
         self.parent.show()
 
     def handleFilter(self):
-        pass
+        curr_transport_type = self.transport_type_dropdown.currentText()
+        curr_site = self.contain_site_dropdown.currentText()
+        curr_route = self.route.text()
+        curr_start_date = self.start_date.text()
+        curr_end_date = self.end_date.text()
+
+        transit_type_filter = (not (curr_transport_type == '--ALL--'))
+        route_filter = (not(curr_route == ''))
+        start_date_filter = (not (curr_start_date == ''))
+        end_date_filter = (not (curr_end_date == ''))
+
+        if (start_date_filter):
+            if (not valid_date_check(curr_start_date, self)):
+                return
+        if (end_date_filter):
+            if (not valid_date_check(curr_end_date, self)):
+                return
+
+        query = self.root_query + "join transit_connections as TC "\
+            + "on TT.transit_type = TC.transit_type "\
+            + "and TT.route = TC.route "\
+            + f"where TT.username = '{self.username}' "\
+            + f"and TC.site_name = '{curr_site}' "
+
+        if (start_date_filter):
+            query = query + f"and take_date >= '{curr_start_date}' "
+        if (end_date_filter):
+            query = query + f"and take_date <= '{curr_end_date}' "
+        if (route_filter):
+            query = query + f"and TT.route = '{curr_route}' "
+        if (transit_type_filter):
+            query = query + f"and TT.transit_type = '{curr_transport_type}' "
+
+        query = query + "order by TT.take_date"
+
+        self.curr_query = query
+
+        table_rows = sqlQueryOutput(query, ['take_date', 'route', 'transit_type', 'price'])
+
+        self.table_model = SimpleTableModel(["Date", "Route", "Transport Type", "Price"], table_rows)
+        self.table_view.setModel(self.table_model)
+
 
 
 
@@ -2625,7 +2844,7 @@ class UserTakeTransit(QWidget):
                 cursor.execute(query)
                 connection.commit()
                 cursor.close()
-                QMessageBox.information(self, 'PyQt5 message', "You successfully logged your journey!", QMessageBox.Ok)
+                QMessageBox.information(self, 'Congrats!', "You successfully logged your journey!", QMessageBox.Ok)
 
 
 
@@ -3419,7 +3638,7 @@ class RegisterEmpVisitor(QWidget):
                 self, 'Error', 'Please provide a valid 5 digit zip code')
         else:
             cursor = connection.cursor()
-            query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'User'," \
+            query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'Employee', " \
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
             cursor.execute(query)
 
@@ -3582,7 +3801,7 @@ class RegisterEmployee(QWidget):
                 self, 'Error', 'Please provide a valid 5 digit zip code')
         else:
             cursor = connection.cursor()
-            query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'User'," \
+            query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'Employee'," \
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
             cursor.execute(query)
 
@@ -3694,7 +3913,7 @@ class RegisterVisitor(QWidget):
                 self, 'Error', 'The password and confirm password fields must match exactly')
         else:
             cursor = connection.cursor()
-            query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'User'," \
+            query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'Visitor'," \
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
             # print(query)
             cursor.execute(query)
