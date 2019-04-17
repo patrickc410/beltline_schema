@@ -38,6 +38,8 @@ from PyQt5.QtGui import (
 
 
 #TODO column sorting?
+#TODO - better email pattern checking
+#TODO - zipcode isnumeric checking
 
 
 
@@ -1934,33 +1936,33 @@ class AdminEditSite(QWidget):
         self.vbox.addLayout(self.hbox3)
 
         cursor = connection.cursor()
-        query = "select username, concat(fname, ' ', lname) as full_name " \
-            + "from employee join user using (username) " \
-            + "where employee_type = 'Manager' " \
-            + "and username not in (select manager_user from site) "
-        cursor.execute(query)
-        manager_data = [line for line in cursor]
-        cursor.close()
-        manager_dropdown_list = [self.manager_d]
-        for i in manager_data:
-            manager_dropdown_list.append(i["full_name"])
+        query = "(select manager_user, concat(fname, ' ', lname)  as full_name "\
+            + "from site join user where manager_user = username "\
+            + f"and name = '{self.site_name_d}') "\
+            + "union "\
+            + "(select username, concat(fname, ' ', lname) as full_name  "\
+            + "from employee join user using (username)  "\
+            + "where employee_type = 'Manager'  "\
+            + "and username not in (select manager_user from site) "\
+            + "order by user.lname) "
+
+        self.manager_dropdown_list = [i[0] for i in sqlQueryOutput(query, ["full_name"])]
+        self.manager_username_list = [i[0] for i in sqlQueryOutput(query, ['manager_user'])]
+
 
         self.hbox4 = QHBoxLayout()
         self.manager_label = QLabel("Manager: ")
         self.manager_dropdown = QComboBox(self)
-        self.manager_dropdown.addItems(manager_dropdown_list)
+        self.manager_dropdown.addItems(self.manager_dropdown_list)
         self.hbox4.addWidget(self.manager_label)
         self.hbox4.addWidget(self.manager_dropdown)
         self.vbox.addLayout(self.hbox4)
-
-        # print(self.openeveryday_d)
 
         self.cb = QCheckBox('Open Every Day?', self)
         if (self.openeveryday_d == 'Yes'):
             self.cb.setChecked(True)
         else:
             self.cb.setChecked(False)
-        # self.cb.stateChanged.connect(self.changeTitle)
         self.vbox.addWidget(self.cb)
 
         self.hbox5 = QHBoxLayout()
@@ -1972,7 +1974,6 @@ class AdminEditSite(QWidget):
         self.hbox5.addWidget(self.back_btn)
         self.vbox.addLayout(self.hbox5)
 
-
         self.setLayout(self.vbox)
 
     def handleBack(self):
@@ -1980,7 +1981,38 @@ class AdminEditSite(QWidget):
         self.parent.show()
 
     def handleUpdate(self):
-        pass
+
+        site_name = self.name.text()
+        zipcode = self.zipcode.text()
+        address = self.address.text()
+        manager = self.manager_username_list[self.manager_dropdown.currentIndex()]
+        openeveryday = self.cb.checkState()
+
+        if (site_name == '' or zipcode == '' or address == ''):
+            QMessageBox.warning(
+                self, 'Error', 'Please fill in all fields')
+            return
+        if (len(zipcode) != 5 or not is_int(zipcode)):
+            QMessageBox.warning(
+                self, 'Error', 'Please provide a valid 5 digit zip code')
+            return
+        o = ''
+        if (openeveryday):
+            o = 'Yes'
+        else:
+            o = 'No'
+
+        query = f"update site set name = '{site_name}', zipcode = '{zipcode}', address = '{address}', "\
+            f"manager_user = '{manager}', openeveryday = '{o}' where name = '{self.site_name_d}' "
+
+        sqlInsertDeleteQuery(query)
+        QMessageBox.information(
+                self, 'Success', "You successfully updated this site!", QMessageBox.Ok)
+
+        self.parent.handleUpdateTable()
+        self.handleBack()
+
+
 
 
 # SCREEN NUMBER 19
@@ -2003,28 +2035,23 @@ class AdminManageSite(QWidget):
         self.hbox1.addWidget(self.site_dropdown)
         self.vbox.addLayout(self.hbox1)
 
-        cursor = connection.cursor()
-        query = "select name, concat(fname, ' ', lname)  as full_name, " \
-            + "openeveryday, manager_user from site join user where manager_user = username"
-        cursor.execute(query)
-        site_data = [line for line in cursor]
-        cursor.close()
-        self.table_data = []
-        self.manager_username_list = []
-        for i in site_data:
-            self.table_data.append([i["name"], i["full_name"], i["openeveryday"]])
-            self.manager_username_list.append(i["manager_user"])
 
-        manager_name_list = []
-        for i in self.table_data:
-            manager_name_list.append(i[1])
-        manager_name_list.insert(0, "--ALL--")
+        self.root_query = "select name, concat(fname, ' ', lname)  as full_name, " \
+            + "openeveryday, manager_user from site join user where manager_user = username "
+
+        self.table_rows = sqlQueryOutput(self.root_query, ['name', 'full_name', 'openeveryday'])
+        self.curr_query = self.root_query
+
+        self.manager_name_list = [i[0] for i in sqlQueryOutput(self.root_query, ['full_name'])]
+        self.manager_name_list.insert(0, "--ALL--")
+        self.manager_username_list = [i[0] for i in sqlQueryOutput(self.root_query, ['manager_user'])]
         self.manager_username_list.insert(0, "--ALL--")
+
 
         self.hbox2 = QHBoxLayout()
         self.manager_label = QLabel("Manager: ")
         self.manager_dropdown = QComboBox(self)
-        self.manager_dropdown.addItems(manager_name_list)
+        self.manager_dropdown.addItems(self.manager_name_list)
         self.hbox2.addWidget(self.manager_label)
         self.hbox2.addWidget(self.manager_dropdown)
         self.vbox.addLayout(self.hbox2)
@@ -2041,7 +2068,7 @@ class AdminManageSite(QWidget):
         self.filter_btn.clicked.connect(self.handleFilter)
         self.vbox.addWidget(self.filter_btn)
 
-        self.table_model = SimpleTableModel(["Name", "Manager", "Open Every Day"], self.table_data)
+        self.table_model = SimpleTableModel(["Name", "Manager", "Open Every Day"], self.table_rows)
         self.table_view = QTableView()
         self.table_view.setModel(self.table_model)
         self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
@@ -2071,37 +2098,19 @@ class AdminManageSite(QWidget):
         manager = self.manager_username_list[self.manager_dropdown.currentIndex()]
         openeveryday = self.openeveryday_dropdown.currentText()
 
-        if (site == '--ALL--' and manager == '--ALL--'):
-            query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
-                + "from site join user where manager_user = username "\
-                + f"and openeveryday = '{openeveryday}'"
-        elif (site == '--ALL--'):
-            query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
-                + "from site join user where manager_user = username "\
-                + f"and manager_user = '{manager}' "\
-                + f"and openeveryday = '{openeveryday}'"
-        elif (manager == '--ALL--'):
-            query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
-                + "from site join user where manager_user = username "\
-                + f"and name = '{site}' "\
-                + f"and openeveryday = '{openeveryday}'"
-        else:
-            query = "select name, concat(fname, ' ', lname)  as full_name, openeveryday "\
-                + "from site join user where manager_user = username "\
-                + f"and name = '{site}' "\
-                + f"and manager_user = '{manager}' "\
-                + f"and openeveryday = '{openeveryday}'"
-        cursor = connection.cursor()
-        cursor.execute(query)
-        site_data = [line for line in cursor]
-        self.table_data = []
-        for i in site_data:
-            self.table_data.append([i["name"], i["full_name"], i["openeveryday"]])
-        self.hide()
-        self.table_model = SimpleTableModel(["Name", "Manager", "Open Every Day"], self.table_data)
-        self.table_view.setModel(self.table_model)
-        self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
-        self.show()
+        site_filter = (not (site == '--ALL--'))
+        manager_filter = (not (manager == '--ALL--'))
+
+        query = self.root_query + f"and openeveryday = '{openeveryday}' "
+
+        if (site_filter):
+            query = query + f"and name = '{site}' "
+        if manager_filter:
+            query = query + f"and manager_user = '{manager}' "
+
+        self.handleUpdateTable(query)
+        self.curr_query = query
+
 
     def handleBack(self):
         self.close()
@@ -2115,9 +2124,7 @@ class AdminManageSite(QWidget):
 
     def handleEdit(self):
         selected = len(self.table_view.selectedIndexes())
-        # print(selected)
         row_index = self.table_view.currentIndex().row()
-        # print(row_index)
         if (not selected):
             QMessageBox.warning(
                 self, 'Error', 'Please select a row of the table')
@@ -2127,7 +2134,6 @@ class AdminManageSite(QWidget):
             self.admin_edit_site = AdminEditSite(self, site_name)
             self.admin_edit_site.show()
             self.admin_edit_site.raise_()
-
 
 
     def handleDelete(self):
@@ -2146,6 +2152,17 @@ class AdminManageSite(QWidget):
             QMessageBox.information(
                     self, 'Success', "You successfully deleted the selected site!", QMessageBox.Ok)
             self.handleFilter()
+
+
+    def handleUpdateTable(self, query=None):
+        if (query == None):
+            query = self.root_query
+
+        self.table_rows = sqlQueryOutput(query, ['name', 'full_name', 'openeveryday'])
+        self.table_model = SimpleTableModel(["Name", "Manager", "Open Every Day"], self.table_rows)
+        self.table_view.setModel(self.table_model)
+
+
 
 
 # SCREEN NUMBER 18
@@ -2251,8 +2268,12 @@ class AdminManageUser(QWidget):
 
 
     def handleApprove(self):
-        username = check_selected(self.table_view, self.table_model, self, [0])
+        username = check_selected(self.table_view, self.table_model, self, [0, 3])
         if (username != None):
+            if username[1] == 'Approved':
+                QMessageBox.warning(
+                    self, 'Error', 'This account has already been approved')
+                return
             query = f"update user set status = 'Approved' where username = '{username[0]}'"
             sqlInsertDeleteQuery(query)
             QMessageBox.information(
@@ -2260,8 +2281,12 @@ class AdminManageUser(QWidget):
             self.handleUpdateTable(self.curr_query)
 
     def handleDecline(self):
-        username = check_selected(self.table_view, self.table_model, self, [0])
+        username = check_selected(self.table_view, self.table_model, self, [0, 3])
         if (username != None):
+            if username[1] == 'Approved':
+                QMessageBox.warning(
+                    self, 'Error', 'You cannot decline an account that has already been approved')
+                return
             query = f"update user set status = 'Declined' where username = '{username[0]}'"
             sqlInsertDeleteQuery(query)
             QMessageBox.information(
