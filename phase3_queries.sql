@@ -1,3 +1,62 @@
+
+-- screen 16 filtering base query
+select TT.take_date, TT.route, TT.transit_type, T.price
+from take_transit as TT
+join transit as T
+on T.route = TT.route
+and T.type = TT.transit_type
+where TT.username = 'manager2'
+
+-- screen 16 all filters applied 
+select TT.take_date, TT.route, TT.transit_type, T.price
+from take_transit as TT
+join transit as T
+on T.route = TT.route
+and T.type = TT.transit_type
+join transit_connections as TC
+on TT.transit_type = TC.transit_type
+and TT.route = TC.route
+where TT.username = 'manager2'
+and TC.site_name = 'Inman Park'
+and take_date >= '2019-03-01'
+and take_date <= '2019-03-23'
+and TT.route = 'Blue'
+and TT.transit_type = 'MARTA'
+order by TT.take_date
+
+
+
+-- screen 17 check if employee is a visitor
+select exists (select * from visitor_list
+where username = 'manager2')
+
+
+-- screen 17 check to see that an email to add is unique
+select exists (select * from email
+where email = 'dsmith@outlook.com')
+
+-- screen 17 check to see that phone is unique
+select exists (select * from employee
+where phone = '1234567890')
+
+-- screen 17 delete emails
+delete from email where email = '{i}'
+
+-- screen 17 add emails
+insert into email (username, email) 
+values ('{self.username_d}', '{i}') 
+
+-- screen 17 delete from visitor_list
+delete from visitor_list where username = ''
+
+-- screen 17 insert into visitor_list
+insert into visitor_list (username) values ('')
+
+
+
+
+
+
 -- screen 25 display
 select E.name as 'Name', count(distinct staff_user) as 'Staff Count', datediff(E.end_date, E.start_date) + 1 as 'Duration (days)',
 count(VE.username) as 'Total Visits', E.price * count(VE.username) as 'Total Revenue ($)'
@@ -204,3 +263,21 @@ on E.name = VE.event_name
 and E.start_date = VE.start_date
 and E.site_name = VE.site_name
 group by E.name, E.start_date, E.site_name
+order by E.name
+
+
+-- screen 34 display
+select E.end_date, E.price, E.capacity - count(VE.username) as 'Ticket Remaining', description 
+from event as E
+join visit_event as VE
+on E.name = VE.event_name
+and E.start_date = VE.start_date
+and E.site_name = VE.site_name
+where E.name = 'Bus Tour'
+and E.start_date = '2019-02-01'
+and E.site_name = 'Inman Park'
+
+
+-- screen 34 insert query
+insert into visit_event (username, event_name, start_date, site_name, visit_date)
+values ('{self.username}', '{self.event_name}', '{self.start_date}', '{self.site_name}', '{log_date}')
