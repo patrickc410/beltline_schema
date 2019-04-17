@@ -2261,7 +2261,7 @@ class AdminManageUser(QWidget):
         if (status_filter):
             query = query + f"and status = '{status}'"
         if (username_filter):
-            query = query + f"and username = '{username}'"
+            query = query + f"and username like '%{username}%'"
 
         self.handleUpdateTable(query)
         self.curr_query = query
