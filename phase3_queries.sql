@@ -91,6 +91,45 @@ and username = 'manager1'
 
 
 
+-- screen 19 inital table view
+select name, concat(fname, ' ', lname)  as full_name, 
+openeveryday, manager_user from site join user where manager_user = username
+
+-- screen 19 table all filters applied
+select name, concat(fname, ' ', lname)  as full_name, 
+openeveryday, manager_user from site join user where manager_user = username
+and openeveryday = '{openeveryday}'
+and name = '{site}'
+and manager_user = '{manager}'
+
+
+
+-- screen 20 inital display
+select name, zipcode, address, concat(fname, ' ', lname)  as full_name,
+openeveryday from site join user where manager_user = username
+and name = 'Inman Park'
+
+-- screen 20 inital display, manager dropdown list
+(select manager_user, concat(fname, ' ', lname)  as full_name
+from site join user where manager_user = username
+and name = 'Inman Park')
+union
+(select username, concat(fname, ' ', lname) as full_name 
+from employee join user using (username) 
+where employee_type = 'Manager' 
+and username not in (select manager_user from site)
+order by user.lname)
+
+
+-- screen 20 update site
+update site set name = '{}', zipcode = '{}', address = '{}',
+manager_user = '{}', openeveryday = '{}' where name = '{}'
+
+
+
+
+
+
 
 -- screen 25 display
 select E.name as 'Name', count(distinct staff_user) as 'Staff Count', datediff(E.end_date, E.start_date) + 1 as 'Duration (days)',
