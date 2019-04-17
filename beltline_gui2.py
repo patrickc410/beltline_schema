@@ -40,6 +40,24 @@ from PyQt5.QtGui import (
 #TODO column sorting?
 
 
+
+def check_selected(table_view, table_model, parent, index_list=None):
+    selected = len(table_view.selectedIndexes())
+    row_index = table_view.currentIndex().row()
+    if (not selected):
+        QMessageBox.warning(
+            parent, 'Error', 'Please select a row of the table')
+        return None
+    else:
+        if index_list == None:
+            return row_index
+        else:
+            out_list = []
+            for i in index_list:
+                out_list.append(table_model.data[row_index][i])
+            return out_list
+
+
 def valid_email_check(astring, parent):
     email_format = r'\S+@\S+\.\S+'
     email_check = re.fullmatch(email_format, astring)
@@ -2136,7 +2154,7 @@ class AdminManageUser(QWidget):
         super(AdminManageUser, self).__init__()
         self.setWindowTitle("Manage Profile")
         self.parent = parent
-        self.username = username
+        self.username_d = username
 
         self.vbox = QVBoxLayout()
 
@@ -2167,42 +2185,29 @@ class AdminManageUser(QWidget):
         self.filter_btn.clicked.connect(self.handleFilter)
         self.vbox.addWidget(self.filter_btn)
 
-        cursor = connection.cursor()
-        query = "select username, count(email) as 'email count', user_type, status " \
-            + "from user join email using (username) " \
-            + "group by username "
-        cursor.execute(query)
-        user_data = [line for line in cursor]
-        cursor.close()
-        self.table_data = []
-        for i in user_data:
-            self.table_data.append([i["username"], i["email count"], i["user_type"], i["status"]])
-        # pprint(self.table_data)
+        self.drop_temp_table = "drop temporary table if exists s18_table;"
 
+        self.temp_table_query = "create temporary table s18_table "\
+            + "select U.username, count(E.email) as 'email count', "\
+            + "(case U.user_type when 'User' then 'User'  "\
+            + "when 'Visitor' then 'Visitor'  "\
+            + "when 'Employee' then (select employee_type from employee where username = U.username) "\
+            + "else null end) as 'user_type', U.status  "\
+            + "from user as U  "\
+            + "join email as E "\
+            + "using (username) "\
+            + "left outer join employee as EMP "\
+            + "using (username) "\
+            + "group by U.username; "
 
-        cursor = connection.cursor()
-        query = "select employee_type, username " \
-            + "from user join employee using (username)"
-        cursor.execute(query)
-        emp_data = [line for line in cursor]
-        cursor.close()
-        emp_type_dict = {}
-        for i in emp_data:
-            emp_type_dict[i["username"]] = i["employee_type"]
-        # print(emp_type_dict)
+        sqlInsertDeleteQuery(self.drop_temp_table)
+        sqlInsertDeleteQuery(self.temp_table_query)
+        self.root_query = "select * from s18_table where user_type <> 'Admin'"
+        self.curr_query = self.root_query
 
-        admin_username_list = []
+        self.table_rows = sqlQueryOutput(self.root_query, ['username', 'email count', 'user_type', 'status'])
 
-        for i in self.table_data:
-            if i[2] == 'Employee':
-                if (emp_type_dict[i[0]] == 'Admin'):
-                    admin_username_list.append(i)
-                i[2] = emp_type_dict[i[0]]
-
-        for i in admin_username_list:
-            self.table_data.remove(i)
-
-        self.table_model = SimpleTableModel(["Username", "Email Count", "User Type", "Status"], self.table_data)
+        self.table_model = SimpleTableModel(["Username", "Email Count", "User Type", "Status"], self.table_rows)
         self.table_view = QTableView()
         self.table_view.setModel(self.table_model)
         self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
@@ -2224,17 +2229,60 @@ class AdminManageUser(QWidget):
         self.setLayout(self.vbox)
 
     def handleFilter(self):
-        pass
+
+        user_type = self.type_dropdown.currentText()
+        status = self.status_dropdown.currentText()
+        username = self.username.text()
+
+        status_filter = (not (status == '--ALL--'))
+        username_filter = (not (username == ''))
+
+        sqlInsertDeleteQuery(self.drop_temp_table)
+        sqlInsertDeleteQuery(self.temp_table_query)
+
+        query = self.root_query + f"and user_type = '{user_type}' "
+        if (status_filter):
+            query = query + f"and status = '{status}'"
+        if (username_filter):
+            query = query + f"and username = '{username}'"
+
+        self.handleUpdateTable(query)
+        self.curr_query = query
+
 
     def handleApprove(self):
-        pass
+        username = check_selected(self.table_view, self.table_model, self, [0])
+        if (username != None):
+            query = f"update user set status = 'Approved' where username = '{username[0]}'"
+            sqlInsertDeleteQuery(query)
+            QMessageBox.information(
+                self, 'Congrats!', f"You successfully approved user '{username[0]}'!", QMessageBox.Ok)
+            self.handleUpdateTable(self.curr_query)
 
     def handleDecline(self):
-        pass
+        username = check_selected(self.table_view, self.table_model, self, [0])
+        if (username != None):
+            query = f"update user set status = 'Declined' where username = '{username[0]}'"
+            sqlInsertDeleteQuery(query)
+            QMessageBox.information(
+                self, 'Welp!', f"You just declined user '{username[0]}'!", QMessageBox.Ok)
+            self.handleUpdateTable(self.curr_query)
 
     def handleBack(self):
         self.close()
         self.parent.show()
+
+    def handleUpdateTable(self, query=None):
+        sqlInsertDeleteQuery(self.drop_temp_table)
+        sqlInsertDeleteQuery(self.temp_table_query)
+        if (query == None):
+            query = self.root_query
+
+        self.table_rows = sqlQueryOutput(query, ['username', 'email count', 'user_type', 'status'])
+        self.table_model = SimpleTableModel(["Username", "Email Count", "User Type", "Status"], self.table_rows)
+        self.table_view.setModel(self.table_model)
+
+
 
 
 # SCREEN NUMBER 17
@@ -2456,8 +2504,6 @@ class EmployeeManageProfile(QWidget):
             self.email_list.remove([email_to_delete])
             self.table_model = SimpleTableModel(["Email"], self.email_list)
             self.table_view.setModel(self.table_model)
-
-
 
 
 
