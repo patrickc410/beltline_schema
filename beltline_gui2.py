@@ -3672,7 +3672,7 @@ class RegisterEmpVisitor(QWidget):
             cursor.close()
             # print("succesful registration")
 
-            QMessageBox.information(self, 'PyQt5 message', "Your registration was a success!", QMessageBox.Ok)
+            QMessageBox.information(self, 'Congrats!', "Your registration was a success!", QMessageBox.Ok)
 
             self.close()
             self.parent.back()
@@ -3832,7 +3832,7 @@ class RegisterEmployee(QWidget):
             cursor.close()
             # print("succesful registration")
 
-            QMessageBox.information(self, 'PyQt5 message', "Your registration was a success!", QMessageBox.Ok)
+            QMessageBox.information(self, 'Congrats', "Your registration was a success!", QMessageBox.Ok)
 
             self.close()
             self.parent.back()
@@ -3938,7 +3938,7 @@ class RegisterVisitor(QWidget):
             cursor.close()
             # print("succesful registration")
 
-            QMessageBox.information(self, 'PyQt5 message', "Your registration was a success!", QMessageBox.Ok)
+            QMessageBox.information(self, 'Congrats!', "Your registration was a success!", QMessageBox.Ok)
 
             self.close()
             self.parent.back()
@@ -4041,7 +4041,7 @@ class RegisterUser(QWidget):
             cursor.close()
             # print("succesful registration")
 
-            QMessageBox.information(self, 'PyQt5 message', "Your registration was a success!", QMessageBox.Ok)
+            QMessageBox.information(self, 'Congrats!', "Your registration was a success!", QMessageBox.Ok)
 
             self.close()
             self.parent.back()
