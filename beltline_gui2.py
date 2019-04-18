@@ -3991,6 +3991,17 @@ class RegisterEmpVisitor(QWidget):
             QMessageBox.warning(
                 self, 'Error', 'Please provide a valid 5 digit zip code')
         else:
+
+            query_exists = f"select exists (select * from employee where phone = '{phone}')"
+            x = sqlQueryOutput(query_exists)
+            not_unique_phone = list(x[0].values())[0]
+
+            if not_unique_phone:
+                QMessageBox.warning(
+                self, 'Error', 'The phone number you provided is already linked to an existing user')
+                return
+
+
             cursor = connection.cursor()
             query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'Employee', " \
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
@@ -4154,6 +4165,16 @@ class RegisterEmployee(QWidget):
             QMessageBox.warning(
                 self, 'Error', 'Please provide a valid 5 digit zip code')
         else:
+
+            query_exists = f"select exists (select * from employee where phone = '{phone}')"
+            x = sqlQueryOutput(query_exists)
+            not_unique_phone = list(x[0].values())[0]
+
+            if not_unique_phone:
+                QMessageBox.warning(
+                self, 'Error', 'The phone number you provided is already linked to an existing user')
+                return
+
             cursor = connection.cursor()
             query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'Employee'," \
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
