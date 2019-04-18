@@ -354,7 +354,6 @@ class VisitorEventDetail(QWidget):
 
 
 
-# SCREEN NUMBER 33
 class VisitorExploreEvent(QWidget):
     def __init__(self, parent, username):
         super(VisitorExploreEvent, self).__init__()
@@ -436,6 +435,40 @@ class VisitorExploreEvent(QWidget):
     def handleFilter(self):
         pass
         #TODO
+        event_name = self.hbox_list[0][1][1].text()
+        desc_keyword = self.hbox_list[1][1][1].text()
+        site_name = self.hbox_list[2][1][1].currentText()
+        start_date = self.hbox_list[3][1][1].text()
+        end_date = self.hbox_list[4][1][1].text()
+        tot_visit_lower = self.hbox_list[5][1][1].text()
+        tot_visit_upper = self.hbox_list[6][1][1].text()
+        if (event_name or desc_keyword or (site_name!= "--ALL--") or start_date or end_date or tot_visit_lower or tot_visit_upper):
+            self.root_query += "where "
+        if event_name != '':
+            self.root_query += f"E.name = '{event_name}' and "
+        if desc_keyword != '':
+            self.root_query += f"E.description like '%{desc_keyword}%' and "
+        if site_name != '--ALL--':
+            self.root_query += f"E.site_name = '{site_name}' and "
+        if start_date != '':
+            self.root_query += f"E.start_date >= '{start_date}' and "
+        if start_date == '':
+            self.root_query += f"E.start_date >= '1900-01-01' and "
+        if end_date != '':
+            self.root_query += f"E.end_date <= '{end_date}' and "
+        if end_date == '':
+            self.root_query += f"E.end_date <= '2019-12-31' and "
+        if tot_visit_lower != '':
+            self.root_query += f"'Total Visits' >= {tot_visit_lower} and "
+        if tot_visit_upper != '':
+            self.root_query += f"'Total Visits' <= {tot_visit_upper} and "
+
+        self.root_query = self.root_query.strip('and ')
+        print(self.root_query)
+
+        self.handleUpdateTable()
+
+
 
     def handleEventDetail(self):
         selected = len(self.table_view.selectedIndexes())
