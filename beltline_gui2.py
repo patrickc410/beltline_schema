@@ -40,7 +40,7 @@ from PyQt5.QtGui import (
 #TODO column sorting?
 #TODO - better email pattern checking
 #TODO - zipcode isnumeric checking
-
+#TODO - price out of range
 
 
 def check_selected(table_view, table_model, parent, index_list=None):
@@ -1449,6 +1449,11 @@ class AdminCreateTransit(QWidget):
                     cursor.execute(query1)
                 connection.commit()
                 cursor.close()
+                QMessageBox.information(
+                self, 'Success', "You successfully created the site!", QMessageBox.Ok)
+                self.parent.handleUpdateTable()
+                self.close()
+                self.parent.show()
 
 
 
@@ -1500,10 +1505,10 @@ class AdminEditTransit(QWidget):
         self.hbox3.addWidget(self.price)
         self.vbox.addLayout(self.hbox3)
 
-        site_name_list = create_site_name_list()
+        self.site_name_list = create_site_name_list()
 
         self.connected_sites_checkboxes = []
-        for i in site_name_list:
+        for i in self.site_name_list:
             cb = QCheckBox(i, self)
             if (i in self.connected_sites_list):
                 cb.setChecked(True)
@@ -1529,6 +1534,60 @@ class AdminEditTransit(QWidget):
 
     def handleUpdate(self):
         pass
+        #TODO
+        #here
+        route = self.route.text()
+        price = self.price.text()
+        connections_list = []
+        for i in range(len(self.connected_sites_checkboxes)):
+            if (self.connected_sites_checkboxes[i].checkState()):
+                connections_list.append(self.site_name_list[i])
+        pprint([route, price, connections_list])
+
+        if (route == '' or price == ''):
+            QMessageBox.warning(
+                self, 'Error', 'Please fill in all fields')
+            return
+
+        if (not is_float(price)):
+            QMessageBox.warning(
+                self, 'Error', 'Please enter a valid decimal number for price')
+            return
+        if (float(price) < 0 or float(price) >= 100):
+            QMessageBox.warning(
+                self, 'Error', 'Price out of range')
+            return
+
+        if (route != self.route_d):
+            query = f"select exists (select * from transit where type = '{self.type_d}' and route = '{route}')"
+            x = sqlQueryOutput(query)
+            already_exists = list(x[0].values())[0]
+            if (already_exists):
+                QMessageBox.warning(
+                    self, 'Error', 'This route, type combination already exists as a transit')
+                return
+
+        query = f"delete from transit_connections where transit_type = '{self.type_d}' and route = '{self.route_d}'"
+        sqlInsertDeleteQuery(query)
+
+        query = f"update transit set route = '{route}', price = {price} "\
+            + f"where type = '{self.type_d}' and route = '{self.route_d}' "
+        sqlInsertDeleteQuery(query)
+
+        for i in connections_list:
+            query = "insert into transit_connections (site_name, transit_type, route) "\
+                + f"values ('{i}', '{self.type_d}', '{route}') "
+            print(query)
+            sqlInsertDeleteQuery(query)
+
+        QMessageBox.information(
+                self, 'Success', "You successfully updated the site!", QMessageBox.Ok)
+        self.parent.handleUpdateTable()
+        self.close()
+        self.parent.show()
+
+
+
 
 
 
@@ -1584,24 +1643,23 @@ class AdminManageTransit(QWidget):
         self.filter_btn.clicked.connect(self.handleFilter)
         self.vbox.addWidget(self.filter_btn)
 
+        self.root_query = "select T.route, T.type, T.price, count(distinct site_name) as '# Connected Sites', count(TT.take_date) as '# Transit Logged' "\
+            + "from transit as T "\
+            + "join transit_connections as TC "\
+            + "on T.route = TC.route "\
+            + "and T.type = TC.transit_type "\
+            + "left outer join take_transit as TT "\
+            + "on TT.route = T.route "\
+            + "and TT.transit_type = T.type "
 
-        cursor = connection.cursor()
-        query = "select transit.route, type, price, count(distinct site_name) as '# Connected Sites', count(take_date) as '# Transit Logged' "\
-            + "from transit, transit_connections, take_transit "\
-            + "where transit_connections.route = transit.route " \
-            + "and transit_connections.transit_type = transit.type "\
-            + "and take_transit.transit_type = transit.type "\
-            + "and take_transit.route= transit.route "\
-            + "group by transit.route, transit.type "
-        cursor.execute(query)
-        table_data = []
-        transit_data = [line for line in cursor]
-        for i in transit_data:
-            table_data.append([i["route"], i["type"], str(i["price"]), i["# Connected Sites"], i["# Transit Logged"]])
-        cursor.close()
+        query = self.root_query + "group by T.route, T.type "
+        self.curr_query = query
+
+        self.headers = ['route', 'type', 'price', '# Connected Sites', '# Transit Logged']
+        self.table_rows = sqlQueryOutput(query, self.headers)
 
 
-        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites", "# Transit Logged"], table_data)
+        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites", "# Transit Logged"], self.table_rows)
         self.table_view = QTableView()
         self.table_view.setModel(self.table_model)
         self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
@@ -1633,75 +1691,31 @@ class AdminManageTransit(QWidget):
         upper_price_bound = self.upper_price_bound.text()
         route = self.route.text()
 
+        lower_price_bound_filter = (not (lower_price_bound == ''))
+        upper_price_bound_filter = (not (upper_price_bound == ''))
+        route_filter = (not (route == ''))
+        transit_type_filter = (not (transit_type == '--ALL--'))
 
 
-        table_data = []
-        cursor = connection.cursor()
+        query = self.root_query + f"where (T.route, T.type) in (select route, transit_type from transit_connections where site_name = '{site}') "
 
-        transit_type_filter = True
-        route_filter = True
-        query = ''
+        if (lower_price_bound_filter and not is_float(lower_price_bound)):
+            pass
+        if (upper_price_bound_filter and not is_float(upper_price_bound)):
+            pass
 
-        if (transit_type == '--ALL--'):
-            transit_type_filter = False
+        if (lower_price_bound_filter):
+            query = query + f"and T.price >= {float(lower_price_bound)} "
+        if (upper_price_bound_filter):
+            query = query + f"and T.price <= {float(upper_price_bound)} "
+        if (transit_type_filter):
+            query = query + f"and T.type = '{transit_type}' "
+        if (route_filter):
+            query = query + f"and T.route = '{route}' "
 
-        if (route == ''):
-            route_filter = False
-
-        if (lower_price_bound == ''):
-            lower_price_bound = 0
-        else:
-            lower_price_bound = float(lower_price_bound)
-
-        if (upper_price_bound == ''):
-            upper_price_bound = 100
-        else:
-            upper_price_bound = float(upper_price_bound)
-
-        # print(site)
-        # print(transit_type)
-        # print(lower_price_bound)
-        # print(upper_price_bound)
-        # print(route)
-
-
-        #TODO - implement route filtering
-
-        if (not transit_type_filter):
-            query = "select transit.route, type, price, count(distinct site_name) as '# Connected Sites', count(take_date) as '# Transit Logged' "\
-                + "from transit, transit_connections, take_transit "\
-                + "where transit_connections.route = transit.route " \
-                + "and transit_connections.transit_type = transit.type "\
-                + "and take_transit.transit_type = transit.type "\
-                + "and take_transit.route= transit.route "\
-                + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{site}') "\
-                + f"and price between {lower_price_bound} and {upper_price_bound} " \
-                + "group by transit.route, transit.type "
-        else:
-            query = "select transit.route, type, price, count(distinct site_name) as '# Connected Sites', count(take_date) as '# Transit Logged' "\
-                + "from transit, transit_connections, take_transit "\
-                + "where transit_connections.route = transit.route " \
-                + "and transit_connections.transit_type = transit.type "\
-                + "and take_transit.transit_type = transit.type "\
-                + "and take_transit.route= transit.route "\
-                + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{site}') "\
-                + f"and price between {lower_price_bound} and {upper_price_bound} " \
-                + f"and type = '{transit_type}' " \
-                + "group by transit.route, transit.type "
-
-
-
-        cursor = connection.cursor()
-        cursor.execute(query)
-        transit_data = [line for line in cursor]
-        for i in transit_data:
-            table_data.append([i["route"], i["type"], str(i["price"]), i["# Connected Sites"], i["# Transit Logged"]])
-        cursor.close()
-        self.hide()
-        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites", "# Transit Logged"], table_data)
-        self.table_view.setModel(self.table_model)
-        self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
-        self.show()
+        query = query + "group by T.route, T.type "
+        self.curr_query = query
+        self.handleUpdateTable(query)
 
     def handleBack(self):
         self.close()
@@ -1715,9 +1729,7 @@ class AdminManageTransit(QWidget):
 
     def handleEdit(self):
         selected = len(self.table_view.selectedIndexes())
-        # print(selected)
         row_index = self.table_view.currentIndex().row()
-        # print(row_index)
         if (not selected):
             QMessageBox.warning(
                 self, 'Error', 'Please select a row of the table')
@@ -1738,15 +1750,23 @@ class AdminManageTransit(QWidget):
             QMessageBox.warning(
                 self, 'Error', 'Please select a row of the table')
         else:
-            site_name = self.table_model.data[row_index][0]
-            cursor = connection.cursor()
-            query = f"delete from site where name = '{site_name}'"
-            cursor.execute(query)
-            connection.commit()
-            cursor.close()
+            route = self.table_model.data[row_index][0]
+            transit_type = self.table_model.data[row_index][1]
+            query = f"delete from transit where route = '{route}' and type = '{transit_type}'"
+            sqlInsertDeleteQuery(query)
             QMessageBox.information(
-                    self, 'Success', "You successfully deleted the selected site!", QMessageBox.Ok)
-            self.handleFilter()
+                self, 'Success', "You successfully deleted the selected site!", QMessageBox.Ok)
+            self.handleUpdateTable(self.curr_query)
+
+
+
+    def handleUpdateTable(self, query=None):
+        if (query == None):
+            query = self.root_query + "group by T.route, T.type "
+
+        self.table_rows = sqlQueryOutput(query, self.headers)
+        self.table_model = SimpleTableModel(self.headers, self.table_rows)
+        self.table_view.setModel(self.table_model)
 
 
 
@@ -2261,7 +2281,7 @@ class AdminManageUser(QWidget):
         if (status_filter):
             query = query + f"and status = '{status}'"
         if (username_filter):
-            query = query + f"and username = '{username}' "
+            query = query + f"and username = '{username}'"
 
         self.handleUpdateTable(query)
         self.curr_query = query
