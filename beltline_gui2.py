@@ -1063,7 +1063,7 @@ class ManagerViewEditEvent(QWidget):
         self.start_date = start_date
         self.site_name = site_name
         self.readOnly = readOnly
-        print(event_name, start_date, site_name)
+        # print(event_name, start_date, site_name)
 
         query1 = "select name, price, E.start_date, E.end_date, E.min_staff_req, capacity, description "\
             + "from event as E "\
@@ -1148,6 +1148,7 @@ class ManagerViewEditEvent(QWidget):
         hbox_contents1 = [
             [('QLabel', ['Daily Visits Range: ']), ('QLineEdit', []), ('QLabel', [' -- ']), ('QLineEdit', [])],
             [('QLabel', ['Daily Revenue Range: ']), ('QLineEdit', []), ('QLabel', [' -- ']), ('QLineEdit', [])],
+            [('QPushButton', ['Filter', 'handleFilter'])]
             ]
         for i in hbox_contents1:
             (x, y) = createHBox(self, i)
@@ -1193,6 +1194,10 @@ class ManagerViewEditEvent(QWidget):
                 self, 'Error', 'You can only update events at the site that you manage')
         else:
             pass
+
+    def handleFilter(self):
+        pass
+        #TODO
 
 
 
@@ -1286,11 +1291,6 @@ class ManagerManageEvent(QWidget):
         revenue_upper_bound = self.hbox_list[6][1][3].text()
 
 
-
-        #TODO - check that user input is valid (dates are dates, numbers are numbers)
-
-
-
         event_name_filter = (not (event_name == ''))
         description_keyword_filter = (not (description_keyword == ''))
         start_date_filter = (not (start_date == ''))
@@ -1301,6 +1301,29 @@ class ManagerManageEvent(QWidget):
         revenue_upper_filter = (not (revenue_upper_bound == ''))
         visits_lower_filter = (not (visits_lower_bound == ''))
         visits_upper_filter = (not (visits_upper_bound == ''))
+
+        if (start_date_filter):
+            if not (valid_date_check(start_date, self)):
+                return
+        if (end_date_filter):
+            if not (valid_date_check(end_date, self)):
+                return
+        if ((duration_lower_filter and not is_float(duration_lower_bound)) or
+            (duration_upper_filter and not is_float(duration_upper_bound))):
+            QMessageBox.warning(
+                self, 'Error', 'Please enter valid numbers for duration range')
+            return
+        if ((revenue_lower_filter and not is_float(revenue_lower_bound)) or
+            (revenue_upper_filter and not is_float(revenue_upper_bound))):
+            QMessageBox.warning(
+                self, 'Error', 'Please enter valid numbers for revenue range')
+            return
+        if ((visits_lower_filter and not is_float(visits_lower_bound)) or
+            (visits_upper_filter and not is_float(visits_upper_bound))):
+            QMessageBox.warning(
+                self, 'Error', 'Please enter valid numbers for total visits range')
+            return
+
 
         filter_count = 0
 
