@@ -442,7 +442,7 @@ class VisitorEventDetail(QWidget):
 
 
 
-
+# SCREEN NUMBER 33
 class VisitorExploreEvent(QWidget):
     def __init__(self, parent, username):
         super(VisitorExploreEvent, self).__init__()
@@ -488,23 +488,29 @@ class VisitorExploreEvent(QWidget):
             self.hbox_list1.append((x,y))
 
 
-        self.root_query = "select E.name, E.site_name, E.start_date, E.price, E.capacity - count(VE.username) as 'Ticket Remaining', "\
-            + "count(VE.username) as 'Total Visits',  "\
-            + f"count(case VE.username when '{self.username}' then 1 else null end) as 'My Visits' "\
+        self.drop_query = "drop temporary table if exists s33"
+        self.temp_table_query = "create temporary table s33 "\
+            + "select E.name, E.site_name, E.start_date, E.price, E.capacity - count(VE.username) as 'ticket_remaining', "\
+            + "count(VE.username) as 'total_visits', "\
+            + f"count(case VE.username when '{self.username}' then 1 else null end) as 'my_visits', "\
+            + "E.description, E.end_date "\
             + "from event as E "\
             + "join visit_event as VE "\
             + "on E.name = VE.event_name "\
             + "and E.start_date = VE.start_date "\
-            + "and E.site_name = VE.site_name "
+            + "and E.site_name = VE.site_name "\
+            + "group by E.name, E.start_date, E.site_name order by E.name; "
 
+        sqlInsertDeleteQuery(self.drop_query)
+        sqlInsertDeleteQuery(self.temp_table_query)
 
+        self.root_query = "select * from s33 "
+        self.curr_query = self.root_query
 
-        query = self.root_query + "group by E.name, E.start_date, E.site_name order by E.name"
-        self.table_rows = sqlQueryOutput(query, ['name', 'site_name', 'price', 'Ticket Remaining', 'Total Visits', 'My Visits'])
-        self.event_key_list = sqlQueryOutput(query, ['name', 'site_name', 'start_date'])
+        self.table_rows = sqlQueryOutput(self.root_query, ['name', 'site_name', 'price', 'ticket_remaining', 'total_visits', 'my_visits'])
+        self.event_key_list = sqlQueryOutput(self.root_query, ['name', 'site_name', 'start_date'])
         self.table_headers = ['Event Name', 'Site Name', 'Ticket Price', 'Ticket Remaining', 'Total Visits', 'My Visits']
         self.table_model, self.table_view = createTable(self.table_headers, self.table_rows)
-        # self.table_view.setColumnWidth(0, 250)
         self.vbox.addWidget(self.table_view)
 
 
@@ -518,44 +524,71 @@ class VisitorExploreEvent(QWidget):
             self.vbox.addLayout(x)
             self.hbox_list1.append((x,y))
 
-
         self.setLayout(self.vbox)
 
+
     def handleFilter(self):
-        pass
-        #TODO
         event_name = self.hbox_list[0][1][1].text()
         desc_keyword = self.hbox_list[1][1][1].text()
         site_name = self.hbox_list[2][1][1].currentText()
         start_date = self.hbox_list[3][1][1].text()
         end_date = self.hbox_list[4][1][1].text()
         tot_visit_lower = self.hbox_list[5][1][1].text()
-        tot_visit_upper = self.hbox_list[6][1][1].text()
+        tot_visit_upper = self.hbox_list[5][1][3].text()
+        price_lower = self.hbox_list[6][1][1].text()
+        price_upper = self.hbox_list[6][1][3].text()
+        include_visited = self.cb_include_visited.checkState()
+        include_soldout = self.cb_include_soldout.checkState()
+
+        query = self.root_query
+
         if (event_name or desc_keyword or (site_name!= "--ALL--") or start_date or end_date or tot_visit_lower or tot_visit_upper):
-            self.root_query += "where "
+            query += "where "
         if event_name != '':
-            self.root_query += f"E.name = '{event_name}' and "
+            query += f"name = '{event_name}' and "
         if desc_keyword != '':
-            self.root_query += f"E.description like '%{desc_keyword}%' and "
+            query += f"description like '%{desc_keyword}%' and "
         if site_name != '--ALL--':
-            self.root_query += f"E.site_name = '{site_name}' and "
+            query += f"site_name = '{site_name}' and "
         if start_date != '':
-            self.root_query += f"E.start_date >= '{start_date}' and "
-        if start_date == '':
-            self.root_query += f"E.start_date >= '1900-01-01' and "
+            if not valid_date_check(start_date, self):
+                return
+            query += f"start_date >= '{start_date}' and "
         if end_date != '':
-            self.root_query += f"E.end_date <= '{end_date}' and "
-        if end_date == '':
-            self.root_query += f"E.end_date <= '2019-12-31' and "
+            if not valid_date_check(end_date, self):
+                return
+            query += f"end_date <= '{end_date}' and "
         if tot_visit_lower != '':
-            self.root_query += f"'Total Visits' >= {tot_visit_lower} and "
+            if not is_float(tot_visit_lower):
+                QMessageBox.warning(
+                self, 'Error', 'The total visits bounds must be valid numbers')
+                return
+            query += f"total_visits >= {tot_visit_lower} and "
         if tot_visit_upper != '':
-            self.root_query += f"'Total Visits' <= {tot_visit_upper} and "
+            if not is_float(tot_visit_upper):
+                QMessageBox.warning(
+                self, 'Error', 'The total visits bounds must be valid numbers')
+                return
+            query += f"total_visits <= {tot_visit_upper} and "
+        if price_lower != '':
+            if not is_float(price_lower):
+                QMessageBox.warning(
+                self, 'Error', 'The price bounds must be valid numbers')
+                return
+            query += f"price >= {price_lower} and "
+        if price_upper != '':
+            if not is_float(price_upper):
+                QMessageBox.warning(
+                self, 'Error', 'The price bounds must be valid numbers')
+                return
+            query += f"price <= {price_upper} and "
+        if not include_visited:
+            query += f"my_visits = 0 and "
+        if not include_soldout:
+            query += f"ticket_remaining > 0 and "
 
-        self.root_query = self.root_query.strip('and ')
-
-        self.handleUpdateTable()
-
+        query = query.strip('and ')
+        self.handleUpdateTable(query)
 
 
     def handleEventDetail(self):
@@ -577,14 +610,19 @@ class VisitorExploreEvent(QWidget):
 
 
     def handleUpdateTable(self, query=None):
-        if (query == None):
-            query = self.root_query + "group by E.name, E.start_date, E.site_name order by E.name"
+        sqlInsertDeleteQuery(self.drop_query)
+        sqlInsertDeleteQuery(self.temp_table_query)
 
-        self.table_rows = sqlQueryOutput(query, ['name', 'site_name', 'price', 'Ticket Remaining', 'Total Visits', 'My Visits'])
+        if (query == None):
+            query = self.root_query
+
+        self.table_rows = sqlQueryOutput(query, ['name', 'site_name', 'price', 'ticket_remaining', 'total_visits', 'my_visits'])
         self.event_key_list = sqlQueryOutput(query, ['name', 'site_name', 'start_date'])
 
         self.table_model = SimpleTableModel(self.table_headers, self.table_rows)
         self.table_view.setModel(self.table_model)
+
+        self.curr_query = query
 
 
 
@@ -4733,7 +4771,6 @@ if __name__ == '__main__':
 
     # TO RUN THE GUI:
     # python beltline_login.py {insert your mysql password here}
-
 
 
 
