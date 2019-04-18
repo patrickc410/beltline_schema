@@ -4001,6 +4001,26 @@ class RegisterEmpVisitor(QWidget):
                 self, 'Error', 'The phone number you provided is already linked to an existing user')
                 return
 
+            for i in self.email_box.email_list:
+                query_exists = f"select exists (select * from email where email = '{i}')"
+                x = sqlQueryOutput(query_exists)
+                not_unique_email = list(x[0].values())[0]
+
+                if not_unique_email:
+                    QMessageBox.warning(
+                    self, 'Error', 'One of the emails you provided is already linked to an existing user')
+                    return
+
+            if (self.email_box.email_input.text() != '' \
+                and self.email_box.email_input.text() != ' ' \
+                and self.email_box.email_input.text() not in self.email_box.email_list):
+                query_exists = f"select exists (select * from email where email = '{self.email_box.email_input.text()}')"
+                x = sqlQueryOutput(query_exists)
+                not_unique_email = list(x[0].values())[0]
+                if not_unique_email:
+                    QMessageBox.warning(
+                    self, 'Error', 'The email you provided in the input box is already linked to an existing user')
+                    return
 
             cursor = connection.cursor()
             query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'Employee', " \
@@ -4175,6 +4195,28 @@ class RegisterEmployee(QWidget):
                 self, 'Error', 'The phone number you provided is already linked to an existing user')
                 return
 
+            for i in self.email_box.email_list:
+                query_exists = f"select exists (select * from email where email = '{i}')"
+                x = sqlQueryOutput(query_exists)
+                not_unique_email = list(x[0].values())[0]
+
+                if not_unique_email:
+                    QMessageBox.warning(
+                    self, 'Error', 'One of the emails you provided is already linked to an existing user')
+                    return
+
+            if (self.email_box.email_input.text() != '' \
+                and self.email_box.email_input.text() != ' ' \
+                and self.email_box.email_input.text() not in self.email_box.email_list):
+                query_exists = f"select exists (select * from email where email = '{self.email_box.email_input.text()}')"
+                x = sqlQueryOutput(query_exists)
+                not_unique_email = list(x[0].values())[0]
+                if not_unique_email:
+                    QMessageBox.warning(
+                    self, 'Error', 'The email you provided in the input box is already linked to an existing user')
+                    return
+
+
             cursor = connection.cursor()
             query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'Employee'," \
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
@@ -4287,6 +4329,29 @@ class RegisterVisitor(QWidget):
             QMessageBox.warning(
                 self, 'Error', 'The password and confirm password fields must match exactly')
         else:
+
+            for i in self.email_box.email_list:
+                query_exists = f"select exists (select * from email where email = '{i}')"
+                x = sqlQueryOutput(query_exists)
+                not_unique_email = list(x[0].values())[0]
+
+                if not_unique_email:
+                    QMessageBox.warning(
+                    self, 'Error', 'One of the emails you provided is already linked to an existing user')
+                    return
+
+            if (self.email_box.email_input.text() != '' \
+                and self.email_box.email_input.text() != ' ' \
+                and self.email_box.email_input.text() not in self.email_box.email_list):
+                query_exists = f"select exists (select * from email where email = '{self.email_box.email_input.text()}')"
+                x = sqlQueryOutput(query_exists)
+                not_unique_email = list(x[0].values())[0]
+                if not_unique_email:
+                    QMessageBox.warning(
+                    self, 'Error', 'The email you provided in the input box is already linked to an existing user')
+                    return
+
+
             cursor = connection.cursor()
             query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'Visitor'," \
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
@@ -4392,6 +4457,28 @@ class RegisterUser(QWidget):
             QMessageBox.warning(
                 self, 'Error', 'The password and confirm password fields must match exactly')
         else:
+
+            for i in self.email_box.email_list:
+                query_exists = f"select exists (select * from email where email = '{i}')"
+                x = sqlQueryOutput(query_exists)
+                not_unique_email = list(x[0].values())[0]
+
+                if not_unique_email:
+                    QMessageBox.warning(
+                    self, 'Error', 'One of the emails you provided is already linked to an existing user')
+                    return
+
+            if (self.email_box.email_input.text() != '' \
+                and self.email_box.email_input.text() != ' ' \
+                and self.email_box.email_input.text() not in self.email_box.email_list):
+                query_exists = f"select exists (select * from email where email = '{self.email_box.email_input.text()}')"
+                x = sqlQueryOutput(query_exists)
+                not_unique_email = list(x[0].values())[0]
+                if not_unique_email:
+                    QMessageBox.warning(
+                    self, 'Error', 'The email you provided in the input box is already linked to an existing user')
+                    return
+
             cursor = connection.cursor()
             query = f"insert into user (username, user_type, fname, " \
                 + "lname, status, password) " \
