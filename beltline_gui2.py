@@ -177,7 +177,96 @@ def sqlInsertDeleteQuery(query):
     cursor.close()
 
 
+#SCREEN NUMBER 37
+class VisitorSiteDetail(QWidget):
+    def __init__(self,parent,username,site_name):
+        super(VisitorExploreSite, self).__init__()
+        self.setWindowTitle("Visitor Site Detail")
+        self.uesrname = username
+        self.parent = parent
 
+        self.vbox = QVBoxLayout()
+
+        self.hbox1 = QHBoxLayout()
+        self.hbox2 = QHBoxLayout()
+        self.hbox3 = QHBoxLayout()
+
+        self.site_label = QLabel("Site:")
+        self.hbox1.addWidget(self.site_label)
+
+        self.openeveryday_label = QLabel("Open Everyday:")
+        self.hbox1.addWidget(self.openeveryday_label)
+
+        self.address_label = QLabel("Address:")
+        self.hbox2.addWidget(self.address_label)
+
+        self.vbox = QVBoxLayout()
+
+        query =  "select openeveryday, address from site"\
+            + f"where name = '{self.site_name}' "
+
+        data = sqlQueryOutput(query, ['openeveryday', 'address'])
+        data = data[0]
+
+
+        self.hbox_list = []
+        hbox_contents = [
+            [('QLabel', ['Site: ']), ('QLabel', [self.site_name])],
+            [('QLabel', ['Open Everyday: ']), ('QLabel', [f'{data[0]}'])],
+            [('QLabel', ['Address: ']), ('QLabel', [f'{data[1]}'])],
+            ]
+
+        for i in hbox_contents:
+            (x, y) = createHBox(self, i)
+            self.vbox.addLayout(x)
+            self.hbox_list.append((x,y))
+
+        self.hbox_list1 = []
+        hbox_contents1 = [
+        [('QLabel', ["Visit Date"]), ('QLineEdit', []), ('QPushButton', ['Log Visit', 'handleLogVisit'])],
+        [('QPushButton', ['Back', 'handleBack'])]
+        ]
+        for i in hbox_contents1:
+            (x, y) = createHBox(self, i)
+            self.vbox.addLayout(x)
+            self.hbox_list1.append((x,y))
+
+        self.setLayout(self.vbox)
+
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+    def handleLogVisit(self):
+        log_date = self.hbox_list1[0][1][1].text()
+
+        date_check = valid_date_check(log_date, self)
+
+        if date_check:
+
+            query = "select exists (select * from visit_site  "\
+                + f"where name = '{self.site_name}' "\
+                + f"and username = '{self.username}' "\
+                + f"and visit_date = '{log_date}') "
+            x = sqlQueryOutput(query)
+            already_visited = list(x[0].values())[0]
+
+            if (already_visited):
+                QMessageBox.warning(
+                    self, 'Error', 'You already visited on this day silly goose!')
+            else:
+
+                query = "insert into visit_site (username, site_name, visit_date) "\
+                    + f"values ('{self.username}', '{self.site_name}', '{log_date}') "
+
+                sqlInsertDeleteQuery(query)
+
+                QMessageBox.information(
+                    self, 'Success', "You successfully logged your visit!", QMessageBox.Ok)
+
+                self.parent.handleUpdateTable()
+                self.handleBack()
 
 # SCREEN NUMBER 35
 class VisitorExploreSite(QWidget):
