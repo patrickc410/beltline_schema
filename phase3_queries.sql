@@ -92,11 +92,11 @@ and username = 'manager1'
 
 
 -- screen 19 inital table view
-select name, concat(fname, ' ', lname)  as full_name, 
+select name, concat(fname, ' ', lname)  as full_name,
 openeveryday, manager_user from site join user where manager_user = username
 
 -- screen 19 table all filters applied
-select name, concat(fname, ' ', lname)  as full_name, 
+select name, concat(fname, ' ', lname)  as full_name,
 openeveryday, manager_user from site join user where manager_user = username
 and openeveryday = '{openeveryday}'
 and name = '{site}'
@@ -114,9 +114,9 @@ and name = 'Inman Park'
 from site join user where manager_user = username
 and name = 'Inman Park')
 union
-(select username, concat(fname, ' ', lname) as full_name 
-from employee join user using (username) 
-where employee_type = 'Manager' 
+(select username, concat(fname, ' ', lname) as full_name
+from employee join user using (username)
+where employee_type = 'Manager'
 and username not in (select manager_user from site)
 order by user.lname)
 
@@ -128,12 +128,50 @@ manager_user = '{}', openeveryday = '{}' where name = '{}'
 
 
 
+-- screen 22 inital view
+select T.route, T.type, T.price, count(distinct site_name) as '# Connected Sites', count(TT.take_date) as '# Transit Logged'
+from transit as T
+join transit_connections as TC
+on T.route = TC.route
+and T.type = TC.transit_type
+left outer join take_transit as TT
+on TT.route = T.route
+and TT.transit_type = T.type
+group by T.route, T.type
+
+-- screen 22 view with all filters applied
+select T.route, T.type, T.price, count(distinct site_name) as '# Connected Sites', count(TT.take_date) as '# Transit Logged'
+from transit as T
+join transit_connections as TC
+on T.route = TC.route
+and T.type = TC.transit_type
+left outer join take_transit as TT
+on TT.route = T.route
+and TT.transit_type = T.type
+where (T.route, T.type) in (select route, transit_type from transit_connections where site_name = 'Inman Park')
+and T.price >= 0
+and T.price <= 100
+and T.type = 'MARTA'
+and T.route = 'Blue'
+group by T.route, T.type
+
+
+
+-- screen 23, making sure route, type combo doesnt already exist
+select exists (select * from transit where type = 'MARTA' and route = 'Blue')
+
+-- screen 23 update transit
+
 
 
 
 -- screen 25 display
-select E.name as 'Name', count(distinct staff_user) as 'Staff Count', datediff(E.end_date, E.start_date) + 1 as 'Duration (days)',
-count(VE.username) as 'Total Visits', E.price * count(VE.username) as 'Total Revenue ($)'
+drop temporary table if exists s25;
+
+-- screen 25 create temp table
+create temporary table s25
+select E.name as 'Name', count(distinct staff_user) as 'Staff Count', datediff(E.end_date, E.start_date) + 1 as 'duration',
+count(VE.username) as 'visits', E.price * count(VE.username) as 'revenue', E.start_date, E.end_date, E.site_name, E.description
 from event as E
 join event_staff_assignments as ESA
 on E.name = ESA.event_name
@@ -146,10 +184,26 @@ and E.site_name = VE.site_name
 group by E.name, E.start_date, E.site_name
 order by E.name
 
+
+-- screen 25 inital display
+select * from s25
+
+-- screen 25 all filters applied
+select * from s25
+where start_date >= '2019-02-01'
+and end_date <= '2019-02-28'
+and description like '%a%'
+and duration >= 1
+and duration <= 10
+and revenue >= 0
+and revenue <= 100
+
+
+
 -- screen 25 event keys
-select E.name, E.site_name, E.start_date
-from event as E
-order by name
+-- select E.name, E.site_name, E.start_date
+-- from event as E
+-- order by name
 
 
 
@@ -328,16 +382,19 @@ and ESA.site_name = 'Inman Park'
 
 
 -- screen 33 display, before filters
-select E.name, E.site_name, E.price, E.capacity - count(VE.username) as 'Ticket Remaining',
-count(VE.username) as 'Total Visits',
-count(case VE.username when 'mary.smith' then 1 else null end) as 'My Visits'
+drop temporary table if exists s33;
+create temporary table s33
+select E.name, E.site_name, E.start_date, E.price, E.capacity - count(VE.username) as 'ticket_remaining',
+count(VE.username) as 'total_visits',
+count(case VE.username when '{self.username}' then 1 else null end) as 'my_visits',
+E.description, E.end_date
 from event as E
 join visit_event as VE
 on E.name = VE.event_name
 and E.start_date = VE.start_date
 and E.site_name = VE.site_name
-group by E.name, E.start_date, E.site_name
-order by E.name
+group by E.name, E.start_date, E.site_name order by E.name;
+select * from s33;
 
 
 -- screen 34 display
