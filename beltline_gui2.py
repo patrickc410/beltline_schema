@@ -2149,7 +2149,7 @@ class AdminCreateSite(QWidget):
             elif (name in site_name_list):
                 QMessageBox.warning(
                         self, 'Error', 'This site name already exists')
-            elif (len(zipcode) != 5):
+            elif (len(zipcode) != 5 or not is_int(zipcode)):
                 QMessageBox.warning(
                         self, 'Error', 'Please enter a valid 5 digit zipcode')
             else:
@@ -2733,6 +2733,11 @@ class EmployeeManageProfile(QWidget):
                 QMessageBox.warning(
                 self, 'Error', 'The phone number you have entered is already taken by an existing user')
                 return
+            if (not is_int(phone)):
+                QMessageBox.warning(
+                self, 'Error', 'Please provide a valid 10 digit phone number')
+                return
+
             query = f"update employee set phone = '{phone}' where username='{self.username_d}'"
             sqlInsertDeleteQuery(query)
 
@@ -3984,10 +3989,10 @@ class RegisterEmpVisitor(QWidget):
         elif (password != confirmpassword):
             QMessageBox.warning(
                 self, 'Error', 'The password and confirm password fields must match exactly')
-        elif (len(phone) != 10):
+        elif (len(phone) != 10 not is_int(phone)):
             QMessageBox.warning(
                 self, 'Error', 'Please provide a valid 10 digit phone number')
-        elif (len(zipcode) != 5):
+        elif (len(zipcode) != 5 or not not is_int(zipcode)):
             QMessageBox.warning(
                 self, 'Error', 'Please provide a valid 5 digit zip code')
         else:
@@ -4178,10 +4183,10 @@ class RegisterEmployee(QWidget):
         elif (password != confirmpassword):
             QMessageBox.warning(
                 self, 'Error', 'The password and confirm password fields must match exactly')
-        elif (len(phone) != 10):
+        elif (len(phone) != 10 or not is_int(phone)):
             QMessageBox.warning(
                 self, 'Error', 'Please provide a valid 10 digit phone number')
-        elif (len(zipcode) != 5):
+        elif (len(zipcode) != 5 or not is_int(zipcode)):
             QMessageBox.warning(
                 self, 'Error', 'Please provide a valid 5 digit zip code')
         else:
