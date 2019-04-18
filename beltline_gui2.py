@@ -276,13 +276,15 @@ class VisitorExploreSite(QWidget):
         self.parent = parent
         self.username = username
 
+        self.vbox = QVBoxLayout()
+
         site_name_list = create_site_name_list()
         site_name_list.insert(0, '--ALL--')
-
+        print(site_name_list)
         self.hbox_list = []
         hbox_contents = [
-            [('QLabel', ['Name: ']), ('QComboBox', site_name_list)],
-            [('QLabel', ['Open Every Day: ']), ('QComboBox', ['--ALL--', 'Yes', 'No'])],
+            [('QLabel', ['Name: ']), ('QComboBox', [site_name_list])],
+            [('QLabel', ['Open Every Day: ']), ('QComboBox', [['--ALL--', 'Yes', 'No']])],
             [('QLabel', ['Start Date: ']), ('QLineEdit', [])],
             [('QLabel', ['End Date: ']), ('QLineEdit', [])],
             [('QLabel', ['Total Visits Range: ']), ('QLineEdit', []), ('QLabel', [' -- ']), ('QLineEdit', [])],
@@ -300,7 +302,7 @@ class VisitorExploreSite(QWidget):
 
         self.hbox_list1 = []
         hbox_contents1 = [
-            [('QPushButton', ['Filter', 'handleFilter']), ('QPushButton', ['Site Detail', 'handleSiteDetail']), ('QPushButton', ['Transit Detail', 'handleTransitDetail'])],
+            [('QPushButton', ['Filter', 'handleFilter']), ('QPushButton', ['Site Detail', 'handleSiteDetail']), ('QPushButton', ['Transit Detail', 'handleTransitDetail'])]
             ]
 
         for i in hbox_contents1:
@@ -308,21 +310,47 @@ class VisitorExploreSite(QWidget):
             self.vbox.addLayout(x)
             self.hbox_list1.append((x,y))
 
-        self.root_query = ''
+        self.drop_query = 'drop temporary table if exists temp35;'
+        self.temp_table_query = 'create temporary table temp35 '\
+                        +"select E.site_name, "\
+                        +"count(distinct E.name,E.start_date) as 'event_counts', "\
+                        +"(select count(*) as 'total visits' "\
+                        +"from site as S "\
+                        +"join event as E "\
+                        +"on S.name = E.site_name "\
+                        +"left outer join visit_site as VS "\
+                        +"on S.name = VS.site_name "\
+                        +"group by S.name "\
+                        +"having S.name = E.site_name "\
+                        +"order by S.name) "\
+                        +"+ "\
+                        +"(select count(*) from visit_event "\
+                        +"group by site_name "\
+                        +"having site_name = E.site_name "\
+                        +"order by site_name) "\
+                        +"as 'total_visits', "\
+                        +f"count(case VE.username when '{self.username}' then 1 else null end) as 'my_visits' "\
+                        +"from event as E join visit_event as VE "\
+                        +"on E.name = VE.event_name and E.start_date = VE.start_date "\
+                        + "group by E.site_name;"
 
 
-        query = self.root_query + "group by E.name, E.start_date, E.site_name order by E.name"
-        self.table_rows = sqlQueryOutput(query, ['name', 'site_name', 'price', 'Ticket Remaining', 'Total Visits', 'My Visits'])
+        sqlInsertDeleteQuery(self.drop_query)
+        sqlInsertDeleteQuery(self.temp_table_query)
+
+        self.root_query = "select * from temp35 "
+        self.curr_query = self.root_query
+
+        self.table_rows = sqlQueryOutput(self.root_query, ['site_name', 'event_counts', 'total_visits', 'my_visits'])
         # self.event_key_list = sqlQueryOutput(query, ['name', 'site_name', 'start_date'])
         self.table_headers = ['Site Name', 'Event Count', 'Total Visits', 'My Visits']
         self.table_model, self.table_view = createTable(self.table_headers, self.table_rows)
         self.vbox.addWidget(self.table_view)
 
 
-        self.hbox_list1 = []
+        self.hbox_list2 = []
         hbox_contents1 = [
-            [('QPushButton', ['Back', 'handleBack'])],
-            ]
+            [('QPushButton', ['Back', 'handleBack'])]]
 
         for i in hbox_contents1:
             (x, y) = createHBox(self, i)
@@ -332,6 +360,20 @@ class VisitorExploreSite(QWidget):
 
         self.setLayout(self.vbox)
 
+
+
+    def handleFilter(self):
+        pass
+
+    def handleSiteDetail(self):
+        pass
+
+    def handleTransitDetail(self):
+        pass
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
 
 
 
