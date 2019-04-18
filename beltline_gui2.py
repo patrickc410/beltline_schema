@@ -1356,7 +1356,9 @@ class ManagerViewEditEvent(QWidget):
             self.vbox.addLayout(x)
             self.hbox_list1.append((x,y))
 
-        query = "select VE.visit_date, count(username) as 'Daily Visits', E.price * count(username) as 'Daily Revenue' "\
+        self.drop_query = "drop temporary table if exists s26_table"
+        self.temp_table_query = "create temporary table s26_table "\
+            + "select VE.visit_date, count(username) as 'daily_visits', E.price * count(username) as 'daily_revenue' "\
             + "from visit_event as VE "\
             + "join event as E "\
             + "on E.name = VE.event_name "\
@@ -1366,8 +1368,14 @@ class ManagerViewEditEvent(QWidget):
             + f"and E.start_date = '{self.start_date}' "\
             + f"and E.site_name = '{self.site_name}' "\
             + "group by VE.visit_date "
-        self.daily_data = sqlQueryOutput(query, ['visit_date', 'Daily Visits', 'Daily Revenue'])
-        self.table_model2, self.table_view2 = createTable(['Date', 'Daily Visits', 'Daily Revenue'], self.daily_data)
+        sqlInsertDeleteQuery(self.drop_query)
+        sqlInsertDeleteQuery(self.temp_table_query)
+        self.root_query = "select * from s26_table "
+        self.curr_query = self.root_query
+
+        self.headers = ['Date', 'Daily Visits', 'Daily Revenue']
+        self.table_rows = sqlQueryOutput(self.root_query, ['visit_date', 'daily_visits', 'daily_revenue'])
+        self.table_model2, self.table_view2 = createTable(self.headers, self.table_rows)
         self.vbox.addWidget(self.table_view2)
 
         self.hbox_list2 = []
@@ -1378,8 +1386,6 @@ class ManagerViewEditEvent(QWidget):
             (x, y) = createHBox(self, i)
             self.vbox.addLayout(x)
             self.hbox_list2.append((x,y))
-
-        #TODO - filter, daily visits range, daily revenue range boxes
 
         self.setLayout(self.vbox)
 
@@ -1393,12 +1399,74 @@ class ManagerViewEditEvent(QWidget):
         if (self.readOnly):
             QMessageBox.warning(
                 self, 'Error', 'You can only update events at the site that you manage')
-        else:
-            pass
+
+
+
 
     def handleFilter(self):
-        pass
-        #TODO
+        visits_lower_bound = self.hbox_list1[0][1][1].text()
+        visits_upper_bound = self.hbox_list1[0][1][3].text()
+        revenue_lower_bound = self.hbox_list1[1][1][1].text()
+        revenue_upper_bound = self.hbox_list1[1][1][3].text()
+
+        revenue_lower_filter = (not (revenue_lower_bound == ''))
+        revenue_upper_filter = (not (revenue_upper_bound == ''))
+        visits_lower_filter = (not (visits_lower_bound == ''))
+        visits_upper_filter = (not (visits_upper_bound == ''))
+
+        if ((revenue_lower_filter and not is_float(revenue_lower_bound)) or
+            (revenue_upper_filter and not is_float(revenue_upper_bound))):
+            QMessageBox.warning(
+                self, 'Error', 'Please enter valid numbers for revenue range')
+            return
+        if ((visits_lower_filter and not is_float(visits_lower_bound)) or
+            (visits_upper_filter and not is_float(visits_upper_bound))):
+            QMessageBox.warning(
+                self, 'Error', 'Please enter valid numbers for total visits range')
+            return
+
+        query = self.root_query
+        sub_query = "where "
+        filter_count = 0
+
+        if (revenue_lower_filter):
+            if (filter_count):
+                sub_query += "and "
+            sub_query += f"daily_revenue >= {revenue_lower_bound} "
+            filter_count += 1
+        if (revenue_upper_filter):
+            if (filter_count):
+                sub_query += "and "
+            sub_query += f"daily_revenue <= {revenue_upper_bound} "
+            filter_count += 1
+        if (visits_lower_filter):
+            if (filter_count):
+                sub_query += "and "
+            sub_query += f"daily_visits >= {visits_lower_bound} "
+            filter_count += 1
+        if (visits_upper_filter):
+            if (filter_count):
+                sub_query += "and "
+            sub_query += f"daily_visits <= {visits_upper_bound} "
+            filter_count += 1
+
+        if (filter_count):
+            query += sub_query
+
+        self.handleUpdateTable(query)
+
+    def handleUpdateTable(self, query=None):
+        sqlInsertDeleteQuery(self.drop_query)
+        sqlInsertDeleteQuery(self.temp_table_query)
+
+        if (query == None):
+            query = self.root_query
+
+        self.curr_query = query
+        self.table_rows = sqlQueryOutput(self.curr_query, ['visit_date', 'daily_visits', 'daily_revenue'])
+        self.table_model2 = SimpleTableModel(self.headers, self.table_rows)
+        self.table_view2.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
+        self.table_view2.setModel(self.table_model2)
 
 
 
@@ -4031,7 +4099,7 @@ class RegisterEmpVisitor(QWidget):
         elif (password != confirmpassword):
             QMessageBox.warning(
                 self, 'Error', 'The password and confirm password fields must match exactly')
-        elif (len(phone) != 10 not is_int(phone)):
+        elif (len(phone) != 10 or not is_int(phone)):
             QMessageBox.warning(
                 self, 'Error', 'Please provide a valid 10 digit phone number')
         elif (len(zipcode) != 5 or not not is_int(zipcode)):
@@ -4926,7 +4994,6 @@ if __name__ == '__main__':
 
     # TO RUN THE GUI:
     # python beltline_login.py {insert your mysql password here}
-
 
 
 
