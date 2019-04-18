@@ -464,7 +464,6 @@ class VisitorExploreEvent(QWidget):
             self.root_query += f"'Total Visits' <= {tot_visit_upper} and "
 
         self.root_query = self.root_query.strip('and ')
-        print(self.root_query)
 
         self.handleUpdateTable()
 
