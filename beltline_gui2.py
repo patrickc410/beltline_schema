@@ -1229,9 +1229,13 @@ class ManagerManageEvent(QWidget):
             self.hbox_list.append((x,y))
 
 
-        query = "select E.name, count(distinct staff_user) as 'Staff Count', datediff(E.end_date, E.start_date) + 1 as 'Duration (days)', "\
-            + "count(VE.username) as 'Total Visits', E.price * count(VE.username) as 'Total Revenue ($)' "\
-            + "from event as E  "\
+        self.drop_query = "drop temporary table if exists s25 "
+        sqlInsertDeleteQuery(self.drop_query)
+
+        self.temp_table_query = "create temporary table s25 "\
+            + "select E.name as 'Name', count(distinct staff_user) as 'Staff Count', datediff(E.end_date, E.start_date) + 1 as 'duration', "\
+            + "count(VE.username) as 'total_visits', E.price * count(VE.username) as 'revenue', E.start_date, E.end_date, E.site_name, E.description "\
+            + "from event as E "\
             + "join event_staff_assignments as ESA "\
             + "on E.name = ESA.event_name "\
             + "and E.site_name = ESA.site_name "\
@@ -1241,16 +1245,19 @@ class ManagerManageEvent(QWidget):
             + "and E.start_date = VE.start_date "\
             + "and E.site_name = VE.site_name "\
             + "group by E.name, E.start_date, E.site_name "\
-            + "order by E.name"
+            + "order by E.name "
 
-        table_rows = sqlQueryOutput(query, ["name", "Staff Count", "Duration (days)", "Total Visits", "Total Revenue ($)"])
-        headers = ["Name", "Staff Count", "Duration (days)", "Total Visits", "Total Revenue ($)"]
+        sqlInsertDeleteQuery(self.temp_table_query)
 
-        query2 = "select E.name, E.site_name, E.start_date from event as E order by name"
+        self.root_query = "select * from s25 "
+        self.curr_query = self.root_query
 
-        self.event_key_list = sqlQueryOutput(query2, ["name", 'site_name', 'start_date'])
+        self.table_rows = sqlQueryOutput(self.root_query, ["Name", "Staff Count", "duration", "total_visits", "revenue"])
+        self.headers = ["Name", "Staff Count", "Duration (days)", "Total Visits", "Total Revenue ($)"]
 
-        self.table_model, self.table_view = createTable(headers, table_rows)
+        self.event_key_list = sqlQueryOutput(self.root_query, ["Name", 'site_name', 'start_date'])
+
+        self.table_model, self.table_view = createTable(self.headers, self.table_rows)
         self.vbox.addWidget(self.table_view)
 
 
@@ -1267,8 +1274,96 @@ class ManagerManageEvent(QWidget):
         self.setLayout(self.vbox)
 
     def handleFilter(self):
-        pass
-        #TODO
+        event_name = self.hbox_list[0][1][1].text()
+        description_keyword = self.hbox_list[1][1][1].text()
+        start_date = self.hbox_list[2][1][1].text()
+        end_date = self.hbox_list[3][1][1].text()
+        duration_lower_bound = self.hbox_list[4][1][1].text()
+        duration_upper_bound = self.hbox_list[4][1][3].text()
+        visits_lower_bound = self.hbox_list[5][1][1].text()
+        visits_upper_bound = self.hbox_list[5][1][3].text()
+        revenue_lower_bound = self.hbox_list[6][1][1].text()
+        revenue_upper_bound = self.hbox_list[6][1][3].text()
+
+
+
+        #TODO - check that user input is valid (dates are dates, numbers are numbers)
+
+
+
+        event_name_filter = (not (event_name == ''))
+        description_keyword_filter = (not (description_keyword == ''))
+        start_date_filter = (not (start_date == ''))
+        end_date_filter = (not (end_date == ''))
+        duration_lower_filter = (not (duration_lower_bound == ''))
+        duration_upper_filter = (not (duration_upper_bound == ''))
+        revenue_lower_filter = (not (revenue_lower_bound == ''))
+        revenue_upper_filter = (not (revenue_upper_bound == ''))
+        visits_lower_filter = (not (visits_lower_bound == ''))
+        visits_upper_filter = (not (visits_upper_bound == ''))
+
+        filter_count = 0
+
+        sub_query = "where "
+
+        query = self.root_query
+        if (event_name_filter):
+            if (not filter_count):
+                sub_query += f"name = '{event_name}' "
+            else:
+                sub_query += f"and name = '{event_name}' "
+            filter_count += 1
+        if (description_keyword_filter):
+            if (not filter_count):
+                sub_query += f"description like '%{description_keyword}%' "
+            else:
+                sub_query += f"and description like '%{description_keyword}%' "
+            filter_count += 1
+        if (start_date_filter):
+            if (filter_count):
+                sub_query += "and "
+            sub_query += f"start_date >= '{start_date}' "
+            filter_count += 1
+        if (end_date_filter):
+            if (filter_count):
+                sub_query += "and "
+            sub_query += f"end_date <= '{end_date}' "
+            filter_count += 1
+        if (duration_lower_filter):
+            if (filter_count):
+                sub_query += "and "
+            sub_query += f"duration >= {duration_lower_bound} "
+            filter_count += 1
+        if (duration_upper_filter):
+            if (filter_count):
+                sub_query += "and "
+            sub_query += f"duration <= {duration_upper_bound} "
+            filter_count += 1
+        if (revenue_lower_filter):
+            if (filter_count):
+                sub_query += "and "
+            sub_query += f"revenue >= {revenue_lower_bound} "
+            filter_count += 1
+        if (revenue_upper_filter):
+            if (filter_count):
+                sub_query += "and "
+            sub_query += f"revenue <= {revenue_upper_bound} "
+            filter_count += 1
+        if (visits_lower_filter):
+            if (filter_count):
+                sub_query += "and "
+            sub_query += f"total_visits >= {visits_lower_bound} "
+            filter_count += 1
+        if (visits_upper_filter):
+            if (filter_count):
+                sub_query += "and "
+            sub_query += f"total_visits <= {visits_upper_bound} "
+            filter_count += 1
+
+
+        if (filter_count):
+            query += sub_query
+        self.handleUpdateTable(query)
 
     def handleCreate(self):
         self.hide()
@@ -1328,33 +1423,20 @@ class ManagerManageEvent(QWidget):
         self.parent.show()
 
     def handleUpdateTable(self, query=None):
+        sqlInsertDeleteQuery(self.drop_query)
+        sqlInsertDeleteQuery(self.temp_table_query)
+
         if (query == None):
-            query = "select E.name, count(distinct staff_user) as 'Staff Count', datediff(E.end_date, E.start_date) + 1 as 'Duration (days)', "\
-                + "count(VE.username) as 'Total Visits', E.price * count(VE.username) as 'Total Revenue ($)' "\
-                + "from event as E  "\
-                + "join event_staff_assignments as ESA "\
-                + "on E.name = ESA.event_name "\
-                + "and E.site_name = ESA.site_name "\
-                + "and E.start_date = ESA.start_date "\
-                + "left outer join visit_event as VE "\
-                + "on E.name = VE.event_name "\
-                + "and E.start_date = VE.start_date "\
-                + "and E.site_name = VE.site_name "\
-                + "group by E.name, E.start_date, E.site_name "\
-                + "order by E.name"
+            query = self.root_query
 
-        table_rows = sqlQueryOutput(query, ["name", "Staff Count", "Duration (days)", "Total Visits", "Total Revenue ($)"])
-        headers = ["Name", "Staff Count", "Duration (days)", "Total Visits", "Total Revenue ($)"]
+        self.curr_query = query
+        self.table_rows = sqlQueryOutput(self.curr_query, ["Name", "Staff Count", "duration", "total_visits", "revenue"])
 
-        query2 = "select E.name, E.site_name, E.start_date from event as E order by name"
+        self.event_key_list = sqlQueryOutput(self.curr_query, ["Name", 'site_name', 'start_date'])
 
-        self.event_key_list = sqlQueryOutput(query2, ["name", 'site_name', 'start_date'])
-
-        self.table_model = SimpleTableModel(headers, table_rows)
+        self.table_model = SimpleTableModel(self.headers, self.table_rows)
         self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
         self.table_view.setModel(self.table_model)
-
-
 
 
 
@@ -1533,9 +1615,6 @@ class AdminEditTransit(QWidget):
         self.parent.show()
 
     def handleUpdate(self):
-        pass
-        #TODO
-        #here
         route = self.route.text()
         price = self.price.text()
         connections_list = []
@@ -1700,9 +1779,11 @@ class AdminManageTransit(QWidget):
         query = self.root_query + f"where (T.route, T.type) in (select route, transit_type from transit_connections where site_name = '{site}') "
 
         if (lower_price_bound_filter and not is_float(lower_price_bound)):
-            pass
+            QMessageBox.warning(
+                self, 'Error', 'The price filters must be valid decimal numbers')
         if (upper_price_bound_filter and not is_float(upper_price_bound)):
-            pass
+            QMessageBox.warning(
+                self, 'Error', 'The price filters must be valid decimal numbers')
 
         if (lower_price_bound_filter):
             query = query + f"and T.price >= {float(lower_price_bound)} "
