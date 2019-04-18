@@ -39,7 +39,6 @@ from PyQt5.QtGui import (
 
 #TODO column sorting?
 #TODO - better email pattern checking
-#TODO - zipcode isnumeric checking
 #TODO - price out of range
 
 
@@ -1806,28 +1805,39 @@ class AdminCreateTransit(QWidget):
             if (unique_transit):
                 QMessageBox.warning(
                         self, 'Error', 'The transit you are trying to create already exists')
-            else:
-                query = f"insert into transit (type, route, price) values ('{transit_type}', '{route}', '{price}')"
-                cursor = connection.cursor()
-                cursor.execute(query)
+                return
 
-                connected_sites_list = []
+            connected_sites_count = 0
+            for i in self.connected_sites_checkboxes:
+                if (i.isChecked()):
+                    connected_sites_count += 1
+            if (connected_sites_count < 2):
+                QMessageBox.warning(
+                    self, 'Error', 'Transits must connect at least two sites')
+                return
 
-                for i in self.connected_sites_checkboxes:
-                    if (i.isChecked()):
-                        connected_sites_list.append(i.text())
 
-                for i in connected_sites_list:
-                    query1 = f"insert into transit_connections (site_name, "\
-                        + f"transit_type, route) values ('{i}', '{transit_type}', '{route}')"
-                    cursor.execute(query1)
-                connection.commit()
-                cursor.close()
-                QMessageBox.information(
-                self, 'Success', "You successfully created the site!", QMessageBox.Ok)
-                self.parent.handleUpdateTable()
-                self.close()
-                self.parent.show()
+            query = f"insert into transit (type, route, price) values ('{transit_type}', '{route}', '{price}')"
+            cursor = connection.cursor()
+            cursor.execute(query)
+
+            connected_sites_list = []
+
+            for i in self.connected_sites_checkboxes:
+                if (i.isChecked()):
+                    connected_sites_list.append(i.text())
+
+            for i in connected_sites_list:
+                query1 = f"insert into transit_connections (site_name, "\
+                    + f"transit_type, route) values ('{i}', '{transit_type}', '{route}')"
+                cursor.execute(query1)
+            connection.commit()
+            cursor.close()
+            QMessageBox.information(
+            self, 'Success', "You successfully created the site!", QMessageBox.Ok)
+            self.parent.handleUpdateTable()
+            self.close()
+            self.parent.show()
 
 
 
@@ -1937,6 +1947,11 @@ class AdminEditTransit(QWidget):
                 QMessageBox.warning(
                     self, 'Error', 'This route, type combination already exists as a transit')
                 return
+
+        if (len(connections_list) < 2):
+            QMessageBox.warning(
+                    self, 'Error', 'Transits must connect at least two sites')
+            return
 
         query = f"delete from transit_connections where transit_type = '{self.type_d}' and route = '{self.route_d}'"
         sqlInsertDeleteQuery(query)
@@ -3141,7 +3156,14 @@ class UserTakeTransit(QWidget):
         self.vbox.addWidget(self.filter_btn)
 
 
-        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites"], [["", "", "", ""]])
+        query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections "\
+            + "on transit_connections.route = transit.route "\
+            + "and transit_connections.transit_type = transit.type "\
+            + "group by transit.route, transit.type "
+
+        table_rows = sqlQueryOutput(query, ['route', 'type', 'price', '# Connected Sites'])
+
+        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites"], table_rows)
         self.table_view = QTableView()
         self.table_view.setModel(self.table_model)
         self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
