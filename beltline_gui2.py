@@ -396,7 +396,23 @@ class VisitorExploreSite(QWidget):
                         +"having site_name = E.site_name "\
                         +"order by site_name) "\
                         +"as 'total_visits', "\
-                        +f"count(case VE.username when '{self.username}' then 1 else null end) as 'my_visits' "\
+                        +"(select count(*) as 'my visits' "\
+                        +"from site as S "\
+                        +"join event as E "\
+                        +"on S.name = E.site_name "\
+                        +"left outer join visit_site as VS "\
+                        +"on S.name = VS.site_name "\
+                        +f"where VS.username = '{self.username}' "\
+                        +"group by S.name "\
+                        +"having S.name = E.site_name "\
+                        +"order by S.name) "\
+                        +"+ "\
+                        +"(select count(*) from visit_event "\
+                        +f"where visit_event.username = '{self.username}' "\
+                        +"group by site_name "\
+                        +"having site_name = E.site_name "\
+                        +"order by site_name) "\
+                        +"as 'my_visits' "\
                         +"from event as E join visit_event as VE "\
                         +"on E.name = VE.event_name and E.start_date = VE.start_date "\
                         + "group by E.site_name;"
