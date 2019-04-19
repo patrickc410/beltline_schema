@@ -945,14 +945,14 @@ class StaffViewSchedule(QWidget):
             self.hbox_list.append((x,y))
 
 
-        self.root_query = "select E.name, E.site_name, E.start_date, E.end_date, count(staff_user) as 'Staff Count' "\
+        self.root_query = "select E.name, E.site_name, E.start_date, E.end_date, count(staff_user) as 'Staff Count', E.description "\
             + "from event as E join event_staff_assignments as ESA "\
             + "on E.name = ESA.event_name "\
             + "and E.site_name = ESA.site_name "\
             + "and E.start_date = ESA.start_date "
 
-        query1 = self.root_query + "group by E.name, E.start_date, E.site_name"
-
+        self.group_by = "group by E.name, E.start_date, E.site_name "
+        query1 = self.root_query + self.group_by
         self.table_rows = sqlQueryOutput(query1, ['name', 'site_name', 'start_date', 'end_date', 'Staff Count'])
 
 
@@ -976,17 +976,38 @@ class StaffViewSchedule(QWidget):
 
 
     def handleFilter(self):
-        pass
-        #TODO
         event_name = self.hbox_list[0][1][1].text()
         description_keyword = self.hbox_list[1][1][1].text()
         start_date = self.hbox_list[2][1][1].text()
         end_date = self.hbox_list[3][1][1].text()
 
-        # if (start_date == ''
+        event_name_filter = (not (event_name == ''))
+        description_keyword_filter = (not (description_keyword == ''))
+        start_date_filter = (not (start_date == ''))
+        end_date_filter = (not (end_date == ''))
 
-        # start_date_check = valid_date_check(start_date, self)
-        # end_date_check = valid_date_check(end_date, self)
+        if start_date_filter:
+            if not valid_date_check(start_date, self):
+                return
+        if end_date_filter:
+            if not valid_date_check(end_date, self):
+                return
+
+        query = self.root_query
+        sub_query = ""
+
+        if event_name_filter:
+            sub_query += f"and E.name = '{event_name}' "
+        if description_keyword_filter:
+            sub_query += f"and E.description like '%{description_keyword}%' "
+        if start_date_filter:
+            sub_query += f"and E.start_date >= '{start_date}' "
+        if end_date_filter:
+            sub_query += f"and E.end_date <= '{end_date}' "
+
+        query += sub_query
+        query += self.group_by
+        self.handleUpdateTable(query)
 
 
     def handleViewEvent(self):
@@ -1005,6 +1026,15 @@ class StaffViewSchedule(QWidget):
     def handleBack(self):
         self.close()
         self.parent.show()
+
+
+    def handleUpdateTable(self, query=None):
+        if query == None:
+            query = self.root_query + self.group_by
+
+        self.table_rows = sqlQueryOutput(query, ['name', 'site_name', 'start_date', 'end_date', 'Staff Count'])
+        self.table_model = SimpleTableModel(self.headers, self.table_rows)
+        self.table_view.setModel(self.table_model)
 
 
 
