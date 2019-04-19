@@ -37,7 +37,7 @@ from PyQt5.QtGui import (
     QPixmap)
 
 
-#TODO column sorting?
+#TODO - column sorting?
 #TODO - better email pattern checking
 #TODO - price out of range
 
@@ -176,12 +176,80 @@ def sqlInsertDeleteQuery(query):
     cursor.close()
 
 
+
+#SCREEN NUMBER 38
+class VisitorVisitHistory(QWidget):
+    def __init__(self,parent,username):
+        super(VisitorVisitHistory, self).__init__()
+        self.setWindowTitle("Visit History")
+        self.username = username
+        self.parent = parent
+
+        self.vbox = QVBoxLayout()
+
+        site_name_list = create_site_name_list()
+        site_name_list.insert(0, '--ALL--')
+
+        self.hbox_list = []
+        hbox_contents = [
+            [('QLabel', ['Event: ']), ('QLineEdit', [])],
+            [('QLabel', ['Site: ']), ('QComboBox', [site_name_list])],
+            [('QLabel', ['Start Date: ']), ('QLineEdit', [])],
+            [('QLabel', ['End Date: ']), ('QLineEdit', [])],
+            [('QPushButton', ['Filter', 'handleFilter'])]
+            ]
+
+        for i in hbox_contents:
+            (x, y) = createHBox(self, i)
+            self.vbox.addLayout(x)
+            self.hbox_list.append((x,y))
+
+
+        #TODO - populate table
+        self.table_rows = [['', '', '', '']]
+        self.headers = ['Date', 'Event', 'Site', 'Price']
+
+        self.table_model, self.table_view = createTable(self.headers, self.table_rows)
+        self.vbox.addWidget(self.table_view)
+
+        self.hbox_list1 = []
+        hbox_contents1 = [
+            [('QPushButton', ['Back', 'handleBack'])]]
+
+        for i in hbox_contents1:
+            (x, y) = createHBox(self, i)
+            self.vbox.addLayout(x)
+            self.hbox_list1.append((x,y))
+
+
+        self.setLayout(self.vbox)
+
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+    def handleFilter(self):
+        pass
+        #TODO
+
+    def handleUpdateTable(self, query=None):
+        pass
+        #TODO
+
+
+
+
+
+
+
+
 #SCREEN NUMBER 37
 class VisitorSiteDetail(QWidget):
     def __init__(self,parent,username,site_name):
         super(VisitorExploreSite, self).__init__()
         self.setWindowTitle("Visitor Site Detail")
-        self.uesrname = username
+        self.username = username
         self.parent = parent
 
         self.vbox = QVBoxLayout()
@@ -3488,7 +3556,10 @@ class VisitorFunctionality(QWidget):
         self.visitor_explore_event.raise_()
 
     def handleViewVisitHistory(self):
-        pass
+        self.hide()
+        self.visitor_visit_history = VisitorVisitHistory(self, self.username)
+        self.visitor_visit_history.show()
+        self.visitor_visit_history.raise_()
 
     def handleBack(self):
         self.close()
@@ -3580,7 +3651,10 @@ class EmpVisitorFunctionality(QWidget):
         self.visitor_explore_event.raise_()
 
     def handleViewVisitHistory(self):
-        pass
+        self.hide()
+        self.visitor_visit_history = VisitorVisitHistory(self, self.username)
+        self.visitor_visit_history.show()
+        self.visitor_visit_history.raise_()
 
     def handleBack(self):
         self.close()
@@ -3732,9 +3806,6 @@ class ManagerFunctionality(QWidget):
         self.user_transit_history.show()
         self.user_transit_history.raise_()
 
-    def handleViewVisitHistory(self):
-        pass
-
     def handleBack(self):
         self.close()
         self.parent.show()
@@ -3831,7 +3902,7 @@ class ManagerVisitorFunctionality(QWidget):
         self.visitor_explore_site = VisitorExploreSite(self,self.username)
         self.visitor_explore_site.show()
         self.visitor_explore_site.raise_()
-        
+
     def handleExploreEvent(self):
         self.hide()
         self.visitor_explore_event = VisitorExploreEvent(self, self.username)
@@ -3845,7 +3916,10 @@ class ManagerVisitorFunctionality(QWidget):
         self.user_transit_history.raise_()
 
     def handleViewVisitHistory(self):
-        pass
+        self.hide()
+        self.visitor_visit_history = VisitorVisitHistory(self, self.username)
+        self.visitor_visit_history.show()
+        self.visitor_visit_history.raise_()
 
     def handleBack(self):
         self.close()
@@ -4000,7 +4074,10 @@ class AdminVisitorFunctionality(QWidget):
         self.user_transit_history.raise_()
 
     def handleViewVisitHistory(self):
-        pass
+        self.hide()
+        self.visitor_visit_history = VisitorVisitHistory(self, self.username)
+        self.visitor_visit_history.show()
+        self.visitor_visit_history.raise_()
 
     def handleBack(self):
         self.close()
@@ -5101,6 +5178,5 @@ if __name__ == '__main__':
 
     # TO RUN THE GUI:
     # python beltline_login.py {insert your mysql password here}
-
 
 
