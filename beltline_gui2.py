@@ -240,17 +240,14 @@ class VisitorVisitHistory(QWidget):
 
 
 
-
-
-
-
 #SCREEN NUMBER 37
 class VisitorSiteDetail(QWidget):
     def __init__(self,parent,username,site_name):
-        super(VisitorExploreSite, self).__init__()
+        super(VisitorSiteDetail, self).__init__()
         self.setWindowTitle("Visitor Site Detail")
         self.username = username
         self.parent = parent
+        self.site_name = site_name
 
         self.vbox = QVBoxLayout()
 
@@ -269,8 +266,8 @@ class VisitorSiteDetail(QWidget):
 
         self.vbox = QVBoxLayout()
 
-        query =  "select openeveryday, address from site"\
-            + f"where name = '{self.site_name}' "
+        query =  "select openeveryday, address from site "\
+            + f"where name = '{self.site_name}';"
 
         data = sqlQueryOutput(query, ['openeveryday', 'address'])
         data = data[0]
@@ -313,7 +310,7 @@ class VisitorSiteDetail(QWidget):
         if date_check:
 
             query = "select exists (select * from visit_site  "\
-                + f"where name = '{self.site_name}' "\
+                + f"where site_name = '{self.site_name}' "\
                 + f"and username = '{self.username}' "\
                 + f"and visit_date = '{log_date}') "
             x = sqlQueryOutput(query)
@@ -335,6 +332,10 @@ class VisitorSiteDetail(QWidget):
                 self.parent.handleUpdateTable()
                 self.handleBack()
 
+
+
+
+        
 # SCREEN NUMBER 35
 class VisitorExploreSite(QWidget):
     def __init__(self, parent, username):
@@ -432,11 +433,36 @@ class VisitorExploreSite(QWidget):
         pass
 
     def handleSiteDetail(self):
-        pass
+        selected = len(self.table_view.selectedIndexes())
+        row_index = self.table_view.currentIndex().row()
+        if (not selected):
+            QMessageBox.warning(
+                self, 'Error', 'Please select a row of the table')
+        else:
+            site_data = self.table_rows[row_index]
+            self.hide()
+            self.visitor_site_detail = VisitorSiteDetail(self, self.username, site_data[0])
+            self.visitor_site_detail.show()
+            self.visitor_site_detail.raise_()
 
     def handleTransitDetail(self):
         pass
 
+    def handleUpdateTable(self, query=None):
+        sqlInsertDeleteQuery(self.drop_query)
+        sqlInsertDeleteQuery(self.temp_table_query)
+
+        if (query == None):
+            query = self.root_query
+
+        self.table_rows = sqlQueryOutput(query, ['site_name', 'event_counts', 'total_visits', 'my_visits'])
+        #self.event_key_list = sqlQueryOutput(query, ['name', 'site_name', 'start_date'])
+
+        self.table_model = SimpleTableModel(self.table_headers, self.table_rows)
+        self.table_view.setModel(self.table_model)
+
+        self.curr_query = query
+        
     def handleBack(self):
         self.close()
         self.parent.show()
