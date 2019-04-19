@@ -204,9 +204,22 @@ class VisitorVisitHistory(QWidget):
             self.vbox.addLayout(x)
             self.hbox_list.append((x,y))
 
+        self.drop_query = "drop temporary table if exists s38"
 
-        #TODO - populate table
-        self.table_rows = [['', '', '', '']]
+        self.temp_table_query = "create temporary table s38 "\
+            + "(select VE.visit_date, VE.site_name, VE.event_name, E.price from visit_event as VE "\
+            + "join event as E on E.name = VE.event_name "\
+            + f"and E.site_name = VE.site_name and E.start_date = VE.start_date and username = '{self.username}') "\
+            + "union all "\
+            + f"(select visit_date, site_name, null, 0 from visit_site where username = '{self.username}') "
+
+        sqlInsertDeleteQuery(self.drop_query)
+        sqlInsertDeleteQuery(self.temp_table_query)
+
+        self.root_query = "select * from s38 "
+        self.curr_query = self.root_query
+
+        self.table_rows = sqlQueryOutput(self.root_query, ['visit_date', 'event_name', 'site_name', 'price'])
         self.headers = ['Date', 'Event', 'Site', 'Price']
 
         self.table_model, self.table_view = createTable(self.headers, self.table_rows)
@@ -230,12 +243,66 @@ class VisitorVisitHistory(QWidget):
         self.parent.show()
 
     def handleFilter(self):
-        pass
-        #TODO
+        event = self.hbox_list[0][1][1].text()
+        site = self.hbox_list[1][1][1].currentText()
+        start_date = self.hbox_list[2][1][1].text()
+        end_date = self.hbox_list[3][1][1].text()
+
+        event_filter = (not (event == ''))
+        start_date_filter = (not (start_date == ''))
+        end_date_filter = (not (end_date == ''))
+        site_name_filter = (not (site == '--ALL--'))
+
+        if start_date_filter:
+            if not valid_date_check(start_date, self):
+                return
+        if end_date_filter:
+            if not valid_date_check(end_date, self):
+                return
+
+        query = self.root_query
+        sub_query = 'where '
+
+        filter_count = 0
+        if start_date_filter:
+            sub_query += f"visit_date >= '{start_date}' "
+            filter_count += 1
+        if end_date_filter:
+            if filter_count:
+                sub_query += "and "
+            sub_query += f"visit_date <= '{end_date}' "
+            filter_count += 1
+        if site_name_filter:
+            if filter_count:
+                sub_query += "and "
+            sub_query += f"site_name = '{site}' "
+            filter_count += 1
+        if event_filter:
+            if filter_count:
+                sub_query += "and "
+            sub_query += f"event_name = '{event}' "
+            filter_count += 1
+
+        if filter_count:
+            query += sub_query
+
+        self.handleUpdateTable(query)
+
+
 
     def handleUpdateTable(self, query=None):
-        pass
-        #TODO
+
+        sqlInsertDeleteQuery(self.drop_query)
+        sqlInsertDeleteQuery(self.temp_table_query)
+
+        if query == None:
+            query = self.root_query
+
+        self.curr_query = query
+        self.table_rows = sqlQueryOutput(query, ['visit_date', 'event_name', 'site_name', 'price'])
+
+        self.table_model = SimpleTableModel(self.headers, self.table_rows)
+        self.table_view.setModel(self.table_model)
 
 
 
