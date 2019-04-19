@@ -993,7 +993,6 @@ class ManagerManageStaff(QWidget):
             fname_filter = (not (first_name == ''))
             lname_filter = (not (last_name == ''))
 
-            #TODO - site filter
 
             query = "select U.username, concat(U.fname, ' ', U.lname) as 'full_name', count(event_name) as '# Event Shifts'  "\
                 + "from user as U "\
@@ -1005,6 +1004,7 @@ class ManagerManageStaff(QWidget):
                 + "and E.start_date = ESA.start_date "\
                 + f"where ((E.start_date >= '{start_date}' and E.start_date <= '{end_date}') "\
                 + f"or (E.end_date >= '{start_date}' and E.end_date <= '{end_date}')) "\
+                + f"and E.site_name = '{site_name}' "
 
 
             if (fname_filter):
