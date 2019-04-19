@@ -3926,7 +3926,10 @@ class AdminVisitorFunctionality(QWidget):
         self.user_take_transit.raise_()
 
     def handleExploreSite(self):
-        pass
+        self.hide()
+        self.visitor_explore_site = VisitorExploreSite(self,self.username)
+        self.visitor_explore_site.show()
+        self.visitor_explore_site.raise_()
 
     def handleExploreEvent(self):
         self.hide()
