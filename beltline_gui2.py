@@ -1258,6 +1258,7 @@ class ManagerCreateEvent(QWidget):
 
 
 
+
 # SCREEN NUMBER 26
 class ManagerViewEditEvent(QWidget):
     def __init__(self, parent, event_name, site_name, start_date, readOnly=False):
@@ -1395,16 +1396,70 @@ class ManagerViewEditEvent(QWidget):
 
     def handleBack(self):
         self.close()
+        self.parent.handleUpdateTable()
         self.parent.show()
 
     def handleUpdate(self):
-        pass
-        #TODO
         if (self.readOnly):
             QMessageBox.warning(
                 self, 'Error', 'You can only update events at the site that you manage')
             return
+        description = self.hbox_list[7][1][0].toPlainText()
+        selected = len(self.table_view.selectedIndexes())
+        if (not selected):
+            QMessageBox.warning(
+                self, 'Error', 'Please select a row of the table')
+            return
+        ESA_list = []
+        for i in self.table_view.selectedIndexes():
+            username = self.staff_username_list[i.row()][0]
+            ESA_list.append(username)
 
+        for i in ESA_list:
+
+            query = "select exists (select EMP.username from employee as EMP " \
+                + "where EMP.employee_type = 'Staff' " \
+                + f"and EMP.username = '{i}' " \
+                + "and EMP.username not in ( " \
+                + "select distinct staff_user from event_staff_assignments as ESA " \
+                + "join event as E " \
+                + "on E.name = ESA.event_name " \
+                + "and E.site_name = ESA.site_name " \
+                + "and E.start_date = ESA.start_date " \
+                + f"where ((E.start_date >= '{self.start_date}' and E.start_date <= '{self.end_date}') " \
+                + f"or (E.end_date >= '{self.start_date}' and E.end_date <= '{self.end_date}'))) " \
+                + "order by EMP.username) "
+
+            x = sqlQueryOutput(query)
+            not_overlap = list(x[0].values())[0]
+
+            if (not not_overlap):
+                QMessageBox.warning(
+                    self, 'Error', 'One or more of the selected employees are already working during the given start and end dates')
+                return
+
+        query = f"delete from event_staff_assignments where event_name = '{self.event_name}' "\
+            + f"and start_date = '{self.start_date}' and site_name = '{self.site_name}' "
+
+        sqlInsertDeleteQuery(query)
+
+        for i in ESA_list:
+
+            query = "insert into event_staff_assignments (staff_user, event_name, start_date, site_name) "\
+                + f"values ('{i}', '{self.event_name}', '{self.start_date}', '{self.site_name}') "
+
+            sqlInsertDeleteQuery(query)
+
+
+
+        query = f"update event set description = '{description}' where name = '{self.event_name}' "\
+            + f"and start_date = '{self.start_date}' and site_name = '{self.site_name}' "
+        sqlInsertDeleteQuery(query)
+
+        QMessageBox.information(
+            self, 'Success', "You successfully updated the event!", QMessageBox.Ok)
+
+        self.handleBack()
 
 
 
@@ -1472,6 +1527,7 @@ class ManagerViewEditEvent(QWidget):
         self.table_model2 = SimpleTableModel(self.headers, self.table_rows)
         self.table_view2.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
         self.table_view2.setModel(self.table_model2)
+
 
 
 
