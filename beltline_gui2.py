@@ -1135,6 +1135,12 @@ class ManagerCreateEvent(QWidget):
             not is_int(min_staff_req)):
             QMessageBox.warning(
                 self, 'Error', 'The price field must be valid decimal number, and the capacity and minimum staff required fields must be valid integers')
+        elif (float(price) < 0 or float(price) >= 100):
+            QMessageBox.warning(
+                    self, 'Error', 'Price out of range')
+        elif (int(min_staff_req) <= 0):
+            QMessageBox.warning(
+                self, 'Error', 'The minimum staff required field must be a positive integer')
         elif (date_check1 == None or date_check2 == None):
             QMessageBox.warning(
                     self, 'Error', 'Please enter valid dates in the form YYYY-MM-DD')
@@ -1398,6 +1404,7 @@ class ManagerViewEditEvent(QWidget):
         if (self.readOnly):
             QMessageBox.warning(
                 self, 'Error', 'You can only update events at the site that you manage')
+            return
 
 
 
@@ -1794,7 +1801,18 @@ class AdminCreateTransit(QWidget):
             QMessageBox.warning(
                     self, 'Error', 'Please fill in all fields')
         else:
-            price = float(self.price.text())
+
+            price = self.price.text()
+            if (not is_float(price)):
+                QMessageBox.warning(
+                    self, 'Error', 'Please enter a valid decimal number for price')
+                return
+            if (float(price) < 0 or float(price) >= 100):
+                QMessageBox.warning(
+                        self, 'Error', 'Price out of range')
+                return
+            price = float(price)
+
             query = f"select exists (select route, type from transit where route = '{route}' and type = '{transit_type}')"
             cursor = connection.cursor()
             cursor.execute(query)
