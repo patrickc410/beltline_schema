@@ -279,7 +279,6 @@ class VisitorExploreSite(QWidget):
 
         site_name_list = create_site_name_list()
         site_name_list.insert(0, '--ALL--')
-        print(site_name_list)
         self.hbox_list = []
         hbox_contents = [
             [('QLabel', ['Name: ']), ('QComboBox', [site_name_list])],
@@ -3513,7 +3512,10 @@ class EmpVisitorFunctionality(QWidget):
         self.user_transit_history.raise_()
 
     def handleExploreSite(self):
-        pass
+        self.hide()
+        self.visitor_explore_site = VisitorExploreSite(self,self.username)
+        self.visitor_explore_site.show()
+        self.visitor_explore_site.raise_()
 
     def handleExploreEvent(self):
         self.hide()
@@ -3769,8 +3771,11 @@ class ManagerVisitorFunctionality(QWidget):
         self.user_take_transit.raise_()
 
     def handleExploreSite(self):
-        pass
-
+        self.hide()
+        self.visitor_explore_site = VisitorExploreSite(self,self.username)
+        self.visitor_explore_site.show()
+        self.visitor_explore_site.raise_()
+        
     def handleExploreEvent(self):
         self.hide()
         self.visitor_explore_event = VisitorExploreEvent(self, self.username)
