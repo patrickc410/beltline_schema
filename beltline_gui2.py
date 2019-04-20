@@ -1182,8 +1182,6 @@ class ManagerSiteReport(QWidget):
 
 
     def handleFilter(self):
-        pass
-        #TODO
         start_date = self.hbox_list[0][1][1].text()
         end_date = self.hbox_list[1][1][1].text()
         event_count_lower = self.hbox_list[2][1][1].text()
@@ -1195,7 +1193,6 @@ class ManagerSiteReport(QWidget):
         revenue_lower = self.hbox_list[5][1][1].text()
         revenue_upper = self.hbox_list[5][1][3].text()
 
-        #here
         start_date_filter = (not (start_date == ''))
         end_date_filter = (not (end_date == ''))
         event_lower_filter = (not (event_count_lower == ''))
@@ -1207,15 +1204,106 @@ class ManagerSiteReport(QWidget):
         revenue_lower_filter = (not (revenue_lower == ''))
         revenue_upper_filter = (not (revenue_upper == ''))
 
+        query = self.root_query
+        sub_query = 'where '
+        filter_count = 0
+
         if (start_date_filter):
             if not valid_date_check(start_date, self):
                 return
+            else:
+                if filter_count:
+                    sub_query += "and "
+                sub_query += f"visit_date >= '{start_date}' "
+                filter_count += 1
         if (end_date_filter):
             if not valid_date_check(end_date, self):
                 return
-        if (event_lower_filter and not is_float(event_count_lower)):
-            return
-            #here
+            else:
+                if filter_count:
+                    sub_query += "and "
+                sub_query += f"visit_date <= '{end_date}' "
+                filter_count += 1
+        if (event_lower_filter):
+            if not is_float(event_count_lower):
+                QMessageBox.warning(self, 'Error', 'The event count bounds must be valid numbers')
+                return
+            else:
+                if filter_count:
+                    sub_query += "and "
+                sub_query += f"event_count >= '{event_count_lower}' "
+                filter_count += 1
+        if (event_upper_filter):
+            if not is_float(event_count_upper):
+                QMessageBox.warning(self, 'Error', 'The event count bounds must be valid numbers')
+                return
+            else:
+                if filter_count:
+                    sub_query += "and "
+                sub_query += f"event_count <= '{event_count_upper}' "
+                filter_count += 1
+
+        if (staff_lower_filter):
+            if not is_float(staff_count_lower):
+                QMessageBox.warning(self, 'Error', 'The staff count bounds must be valid numbers')
+                return
+            else:
+                if filter_count:
+                    sub_query += "and "
+                sub_query += f"staff_count >= '{staff_count_lower}' "
+                filter_count += 1
+        if (staff_upper_filter):
+            if not is_float(staff_count_upper):
+                QMessageBox.warning(self, 'Error', 'The staff count bounds must be valid numbers')
+                return
+            else:
+                if filter_count:
+                    sub_query += "and "
+                sub_query += f"staff_count <= '{staff_count_upper}' "
+                filter_count += 1
+
+        if (visits_lower_filter):
+            if not is_float(visits_lower):
+                QMessageBox.warning(self, 'Error', 'The total visits bounds must be valid numbers')
+                return
+            else:
+                if filter_count:
+                    sub_query += "and "
+                sub_query += f"total_visits >= '{visits_lower}' "
+                filter_count += 1
+        if (visits_upper_filter):
+            if not is_float(visits_upper):
+                QMessageBox.warning(self, 'Error', 'The total visits bounds must be valid numbers')
+                return
+            else:
+                if filter_count:
+                    sub_query += "and "
+                sub_query += f"total_visits <= '{visits_upper}' "
+                filter_count += 1
+
+        if (revenue_lower_filter):
+            if not is_float(revenue_lower):
+                QMessageBox.warning(self, 'Error', 'The total revenue bounds must be valid numbers')
+                return
+            else:
+                if filter_count:
+                    sub_query += "and "
+                sub_query += f"total_revenue >= '{revenue_lower}' "
+                filter_count += 1
+        if (revenue_upper_filter):
+            if not is_float(revenue_upper):
+                QMessageBox.warning(self, 'Error', 'The total revenue bounds must be valid numbers')
+                return
+            else:
+                if filter_count:
+                    sub_query += "and "
+                sub_query += f"total_revenue <= '{revenue_upper}' "
+                filter_count += 1
+
+        if filter_count:
+            query += sub_query
+
+        self.handleUpdateTable(query)
 
 
 
@@ -1227,6 +1315,19 @@ class ManagerSiteReport(QWidget):
         self.close()
         self.parent.show()
 
+    def handleUpdateTable(self, query=None):
+        sqlInsertDeleteQuery(self.drop_query)
+        sqlInsertDeleteQuery(self.temp_table_query)
+        sqlInsertDeleteQuery(self.drop_query2)
+        sqlInsertDeleteQuery(self.temp_table_query2)
+
+        if query == None:
+            query = self.root_query
+
+        self.table_rows = sqlQueryOutput(query, ['visit_date', 'event_count', 'staff_count', 'total_visits', 'total_revenue'])
+
+        self.table_model = SimpleTableModel(self.headers, self.table_rows)
+        self.table_view.setModel(self.table_model)
 
 
 
