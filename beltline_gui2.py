@@ -402,7 +402,7 @@ class VisitorSiteDetail(QWidget):
 
 
 
-        
+
 # SCREEN NUMBER 35
 class VisitorExploreSite(QWidget):
     def __init__(self, parent, username):
@@ -545,7 +545,7 @@ class VisitorExploreSite(QWidget):
         self.table_view.setModel(self.table_model)
 
         self.curr_query = query
-        
+
     def handleBack(self):
         self.close()
         self.parent.show()
@@ -1102,8 +1102,70 @@ class ManagerSiteReport(QWidget):
             self.vbox.addLayout(x)
             self.hbox_list.append((x,y))
 
+        self.drop_query = "drop temporary table if exists s29_dates; "
+        self.temp_table_query = "create temporary table s29_dates "\
+            + "(select visit_date from visit_event) "\
+            + "union "\
+            + "(select visit_date from visit_site); "
+        self.drop_func = "drop function if exists daily_revenue; "
+        self.delimiter1 = "delimiter // "
+        self.revenue_func_query = "create function daily_revenue($day varchar(15)) "\
+            + "returns float "\
+            + "reads sql data "\
+            + "begin "\
+            + "return ( "\
+            + "ifnull((select distinct sum(REV.revenue) as 'total_revenue' "\
+            + "from (select E.price * count(VE.username) as revenue "\
+            + "from event as E "\
+            + "join visit_event as VE "\
+            + "on E.name = VE.event_name "\
+            + "and E.start_date = VE.start_date "\
+            + "and E.site_name = VE.site_name "\
+            + "where VE.visit_date = $day "\
+            + "group by E.name, E.start_date, E.site_name) as REV), 0) "\
+            + "); "\
+            + "end // "
+        self.delimiter2 = "delimiter ; "
+
+        self.drop_query2 = "drop temporary table if exists s29;"
+        self.temp_table_query2 = "create temporary table s29 "\
+            + "select D_OUT.visit_date, "\
+            + "(select count(distinct E.name, E.start_date, E.site_name) "\
+            + "from event as E where E.start_date <= D_OUT.visit_date "\
+            + "and E.end_date >= D_OUT.visit_date) as 'event_count', "\
+            + "(select count(staff_user) from event as E "\
+            + "join event_staff_assignments as ESA "\
+            + "on E.name = ESA.event_name "\
+            + "and E.site_name = ESA.site_name "\
+            + "and E.start_date = ESA.start_date "\
+            + "where E.start_date <= D_OUT.visit_date "\
+            + "and E.end_date >= D_OUT.visit_date) as 'staff_count', "\
+            + "ifnull((select count(username) "\
+            + "from visit_site "\
+            + "group by visit_date "\
+            + "having visit_date = D_OUT.visit_date), 0) "\
+            + "+ "\
+            + "ifnull((select count(username) from visit_event "\
+            + "group by visit_date "\
+            + "having visit_date = D_out.visit_date), 0) "\
+            + "as 'total_visits', "\
+            + "(select daily_revenue(D_OUT.visit_date)) as 'total_revenue' "\
+            + "from s29_dates as D_OUT "\
+            + "order by D_OUT.visit_date; "
+        self.root_query = "select * from s29 "
+
+        cursor = connection.cursor()
+        cursor.execute(self.drop_query)
+        cursor.execute(self.temp_table_query)
+        cursor.execute(self.drop_query2)
+        cursor.execute(self.temp_table_query2)
+        connection.commit()
+        cursor.close()
+
+        self.table_rows = sqlQueryOutput(self.root_query, ['visit_date', 'event_count', 'staff_count', 'total_visits', 'total_revenue'])
+
         self.headers = ["Date", "Event Count", 'Staff Count', 'Total Visits', 'Total Revenue ($)']
-        self.table_model, self.table_view = createTable(self.headers, [['', '', '', '', '']])
+        self.table_model, self.table_view = createTable(self.headers, self.table_rows)
         self.vbox.addWidget(self.table_view)
 
         self.hbox_list1 = []
@@ -1122,6 +1184,40 @@ class ManagerSiteReport(QWidget):
     def handleFilter(self):
         pass
         #TODO
+        start_date = self.hbox_list[0][1][1].text()
+        end_date = self.hbox_list[1][1][1].text()
+        event_count_lower = self.hbox_list[2][1][1].text()
+        event_count_upper = self.hbox_list[2][1][3].text()
+        staff_count_lower = self.hbox_list[3][1][1].text()
+        staff_count_upper = self.hbox_list[3][1][3].text()
+        visits_lower = self.hbox_list[4][1][1].text()
+        visits_upper = self.hbox_list[4][1][3].text()
+        revenue_lower = self.hbox_list[5][1][1].text()
+        revenue_upper = self.hbox_list[5][1][3].text()
+
+        #here
+        start_date_filter = (not (start_date == ''))
+        end_date_filter = (not (end_date == ''))
+        event_lower_filter = (not (event_count_lower == ''))
+        event_upper_filter = (not (event_count_upper == ''))
+        staff_lower_filter = (not (staff_count_lower == ''))
+        staff_upper_filter = (not (staff_count_upper == ''))
+        visits_lower_filter = (not (visits_lower == ''))
+        visits_upper_filter = (not (visits_upper == ''))
+        revenue_lower_filter = (not (revenue_lower == ''))
+        revenue_upper_filter = (not (revenue_upper == ''))
+
+        if (start_date_filter):
+            if not valid_date_check(start_date, self):
+                return
+        if (end_date_filter):
+            if not valid_date_check(end_date, self):
+                return
+        if (event_lower_filter and not is_float(event_count_lower)):
+            return
+            #here
+
+
 
     def handleDailyDetail(self):
         pass
@@ -5317,5 +5413,4 @@ if __name__ == '__main__':
 
     # TO RUN THE GUI:
     # python beltline_login.py {insert your mysql password here}
-
 
