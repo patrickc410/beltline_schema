@@ -404,6 +404,158 @@ class VisitorSiteDetail(QWidget):
                 self.parent.handleUpdateTable()
                 self.handleBack()
 
+#SCREEN NUMBER 36
+class VisitorTransitDetail(QWidget):
+    def __init__(self, parent, username, site_name):
+        super(VisitorTransitDetail, self).__init__()
+        self.setWindowTitle("Visitor Transit Detail")
+
+        self.username = username
+        self.parent = parent
+        self.site_name = site_name
+
+        self.vbox = QVBoxLayout()
+
+        self.hbox1 = QHBoxLayout()
+        self.hbox2 = QHBoxLayout()
+        self.hbox3 = QHBoxLayout()
+
+        self.site_label = QLabel("Site: ")
+        self.selected_site_label = QLabel(self.site_name)
+        self.hbox1.addWidget(self.site_label)
+        self.hbox1.addWidget(self.selected_site_label)
+
+        self.transport_type_label = QLabel("Transport Type: ")
+        self.transport_type_dropdown = QComboBox(self)
+        self.transport_type_dropdown.addItems(["--ALL--", "MARTA", "Bus", "Bike"])
+        self.hbox2.addWidget(self.transport_type_label)
+        self.hbox2.addWidget(self.transport_type_dropdown)
+
+
+        self.filter_btn = QPushButton('Filter', self)
+        self.filter_btn.clicked.connect(self.handleFilter)
+
+
+        self.vbox.addLayout(self.hbox1)
+        self.vbox.addLayout(self.hbox2)
+        self.vbox.addLayout(self.hbox3)
+        self.vbox.addWidget(self.filter_btn)
+
+
+        self.root_query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections "\
+            + "on transit_connections.route = transit.route "\
+            + "and transit_connections.transit_type = transit.type "
+
+        self.group_by = "group by transit.route, transit.type "
+
+        query = self.root_query + self.group_by
+
+        table_rows = sqlQueryOutput(query, ['route', 'type', 'price', '# Connected Sites'])
+
+        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites"], table_rows)
+        self.table_view = QTableView()
+        self.table_view.setModel(self.table_model)
+        self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
+        self.vbox.addWidget(self.table_view)
+
+
+        self.hbox4 = QHBoxLayout()
+        self.transit_date_label = QLabel("Transit Date: ")
+        self.transit_date = QLineEdit(self)
+        self.log_transit_btn = QPushButton('Log Transit', self)
+        self.log_transit_btn.clicked.connect(self.handleLogTransit)
+        self.hbox4.addWidget(self.transit_date_label)
+        self.hbox4.addWidget(self.transit_date)
+        self.hbox4.addWidget(self.log_transit_btn)
+        self.vbox.addLayout(self.hbox4)
+
+        self.back_btn = QPushButton('Back', self)
+        self.back_btn.clicked.connect(self.handleBack)
+        self.vbox.addWidget(self.back_btn)
+
+        self.setLayout(self.vbox)
+
+
+    def handleFilter(self):
+
+        transit_type = self.transport_type_dropdown.currentText()
+        # contain_site = self.contain_site_dropdown.currentText()
+        # lower_price_bound = self.lower_price_bound.text()
+        # upper_price_bound = self.upper_price_bound.text()
+
+        table_data = []
+        cursor = connection.cursor()
+
+        transit_type_filter = True
+        filterquery = ''
+
+        if (transit_type == '--ALL--'):
+            filterquery = self.root_query + self.group_by
+
+        else:
+            filterquery = self.root_query + "where "
+
+        # print(query)
+        cursor.execute(query)
+        transit_data = [line for line in cursor]
+        for i in transit_data:
+            table_data.append([i["route"], i["type"], str(i["price"]), i["# Connected Sites"]])
+
+        self.hide()
+        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites"], table_data)
+        self.table_view.setModel(self.table_model)
+        self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
+
+        self.show()
+
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
+    def handleLogTransit(self):
+        row_index = self.table_view.currentIndex().row()
+
+        if (row_index == -1):
+            QMessageBox.warning(
+                self, 'Error', 'Please select a row of the table')
+        else:
+
+            transit_date = self.transit_date.text()
+            date_pattern = r'[\d]{4}-[0,1][\d]{1}-[0,1,2,3][\d]{1}'
+            date_check = re.fullmatch(date_pattern, transit_date)
+            route = self.table_model.data[row_index][0]
+            transit_type = self.table_model.data[row_index][1]
+            query_check = "select exists (select username " \
+                + "from take_transit " \
+                + f"where username = '{self.username}' " \
+                + f"and transit_type = '{transit_type}' " \
+                + f"and route = '{route}' " \
+                + f"and take_date = '{transit_date}')"
+            cursor = connection.cursor()
+            cursor.execute(query_check)
+            same_day_check = [line for line in cursor]
+            same_day = list(same_day_check[0].values())[0]
+            # print(same_day)
+            # print(same_day_check)
+
+            cursor.close()
+
+            if (date_check == None):
+                QMessageBox.warning(
+                    self, 'Error', 'Please enter a valid date in the form YYYY-MM-DD')
+            elif (same_day):
+                QMessageBox.warning(
+                    self, 'Error', 'You cannot take the same transit twice in one day')
+            else:
+
+                query = "insert into take_transit " \
+                    + "(username, transit_type, route, take_date) " \
+                    + f"values ('{self.username}', '{transit_type}', '{route}', '{transit_date}');"
+                cursor = connection.cursor()
+                cursor.execute(query)
+                connection.commit()
+                cursor.close()
+                QMessageBox.information(self, 'Congrats!', "You successfully logged your journey!", QMessageBox.Ok)
 
 
 
@@ -534,7 +686,17 @@ class VisitorExploreSite(QWidget):
             self.visitor_site_detail.raise_()
 
     def handleTransitDetail(self):
-        pass
+        selected = len(self.table_view.selectedIndexes())
+        row_index = self.table_view.currentIndex().row()
+        if (not selected):
+            QMessageBox.warning(
+                self, 'Error', 'Please select a row of the table')
+        else:
+            site_data = self.table_rows[row_index]
+            self.hide()
+            self.visitor_transit_detail = VisitorTransitDetail(self, self.username, site_data[0])
+            self.visitor_transit_detail.show()
+            self.visitor_transit_detail.raise_()
 
     def handleUpdateTable(self, query=None):
         sqlInsertDeleteQuery(self.drop_query)
