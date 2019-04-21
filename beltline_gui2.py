@@ -406,7 +406,7 @@ class VisitorSiteDetail(QWidget):
 
 #SCREEN NUMBER 36
 class VisitorTransitDetail(QWidget):
-     def __init__(self, parent, username, site_name):
+    def __init__(self, parent, username, site_name):
         super(VisitorTransitDetail, self).__init__()
         self.setWindowTitle("Visitor Transit Detail")
 
