@@ -509,6 +509,54 @@ class VisitorTransitDetail(QWidget):
 
         self.show()
 
+    def handleLogTransit(self):
+        row_index = self.table_view.currentIndex().row()
+
+        if (row_index == -1):
+            QMessageBox.warning(
+                self, 'Error', 'Please select a row of the table')
+        else:
+
+            transit_date = self.transit_date.text()
+            date_pattern = r'[\d]{4}-[0,1][\d]{1}-[0,1,2,3][\d]{1}'
+            date_check = re.fullmatch(date_pattern, transit_date)
+            route = self.table_model.data[row_index][0]
+            transit_type = self.table_model.data[row_index][1]
+            query_check = "select exists (select username " \
+                + "from take_transit " \
+                + f"where username = '{self.username}' " \
+                + f"and transit_type = '{transit_type}' " \
+                + f"and route = '{route}' " \
+                + f"and take_date = '{transit_date}')"
+            cursor = connection.cursor()
+            cursor.execute(query_check)
+            same_day_check = [line for line in cursor]
+            same_day = list(same_day_check[0].values())[0]
+            # print(same_day)
+            # print(same_day_check)
+
+            cursor.close()
+
+            if (date_check == None):
+                QMessageBox.warning(
+                    self, 'Error', 'Please enter a valid date in the form YYYY-MM-DD')
+            elif (same_day):
+                QMessageBox.warning(
+                    self, 'Error', 'You cannot take the same transit twice in one day')
+            else:
+
+                query = "insert into take_transit " \
+                    + "(username, transit_type, route, take_date) " \
+                    + f"values ('{self.username}', '{transit_type}', '{route}', '{transit_date}');"
+                cursor = connection.cursor()
+                cursor.execute(query)
+                connection.commit()
+                cursor.close()
+                QMessageBox.information(self, 'Congrats!', "You successfully logged your journey!", QMessageBox.Ok)
+    def handleBack(self):
+        self.close()
+        self.parent.show()
+
 
 # SCREEN NUMBER 35
 class VisitorExploreSite(QWidget):
