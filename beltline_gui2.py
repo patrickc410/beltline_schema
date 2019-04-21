@@ -4725,7 +4725,6 @@ class AdminFunctionality(QWidget):
 
 
 
-
 class RegisterEmpVisitor(QWidget):
     def __init__(self, parent):
         super(RegisterEmpVisitor, self).__init__()
@@ -4834,6 +4833,9 @@ class RegisterEmpVisitor(QWidget):
         elif (password != confirmpassword):
             QMessageBox.warning(
                 self, 'Error', 'The password and confirm password fields must match exactly')
+        elif (len(password) < 8):
+            QMessageBox.warning(
+                self, 'Error', 'The password must be at least 8 characters long')
         elif (len(phone) != 10 or not is_int(phone)):
             QMessageBox.warning(
                 self, 'Error', 'Please provide a valid 10 digit phone number')
@@ -4863,7 +4865,7 @@ class RegisterEmpVisitor(QWidget):
 
             cursor = connection.cursor()
             query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'Employee', " \
-                + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
+                + f"'{firstname}', '{lastname}', 'Pending', '{hash(password)}');"
             cursor.execute(query)
 
             for x in self.email_table.added_emails:
@@ -5000,6 +5002,9 @@ class RegisterEmployee(QWidget):
         elif (password != confirmpassword):
             QMessageBox.warning(
                 self, 'Error', 'The password and confirm password fields must match exactly')
+        elif (len(password) < 8):
+            QMessageBox.warning(
+                self, 'Error', 'The password must be at least 8 characters long')
         elif (len(phone) != 10 or not is_int(phone)):
             QMessageBox.warning(
                 self, 'Error', 'Please provide a valid 10 digit phone number')
@@ -5030,7 +5035,7 @@ class RegisterEmployee(QWidget):
 
             cursor = connection.cursor()
             query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'Employee'," \
-                + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
+                + f"'{firstname}', '{lastname}', 'Pending', '{hash(password)}');"
             cursor.execute(query)
 
 
@@ -5125,6 +5130,9 @@ class RegisterVisitor(QWidget):
         elif (password != confirmpassword):
             QMessageBox.warning(
                 self, 'Error', 'The password and confirm password fields must match exactly')
+        elif (len(password) < 8):
+            QMessageBox.warning(
+                self, 'Error', 'The password must be at least 8 characters long')
         else:
 
             for i in self.email_table.added_emails:
@@ -5140,7 +5148,7 @@ class RegisterVisitor(QWidget):
 
             cursor = connection.cursor()
             query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'Visitor'," \
-                + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
+                + f"'{firstname}', '{lastname}', 'Pending', '{hash(password)}');"
             cursor.execute(query)
 
             for x in self.email_table.added_emails:
@@ -5227,6 +5235,9 @@ class RegisterUser(QWidget):
         elif (password != confirmpassword):
             QMessageBox.warning(
                 self, 'Error', 'The password and confirm password fields must match exactly')
+        elif (len(password) < 8):
+            QMessageBox.warning(
+                self, 'Error', 'The password must be at least 8 characters long')
         else:
 
             for i in self.email_table.added_emails:
@@ -5243,7 +5254,7 @@ class RegisterUser(QWidget):
             query = f"insert into user (username, user_type, fname, " \
                 + "lname, status, password) " \
                 + f"values ('{username}', 'User'," \
-                + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
+                + f"'{firstname}', '{lastname}', 'Pending', '{hash(password)}');"
             cursor.execute(query)
 
             for x in self.email_table.added_emails:
@@ -5391,7 +5402,11 @@ class UserLogin(QWidget):
         if (email == '' or password == ''):
             QMessageBox.warning(
                 self, 'Error', 'Please fill in both the email and the password fields')
-        elif (email not in login_dict.keys()):
+            return
+
+        password = hash(password)
+
+        if (email not in login_dict.keys()):
             QMessageBox.warning(
                 self, 'Error', 'The email provided is not linked to an existing user')
         elif (login_dict[email] != password):
@@ -5618,4 +5633,4 @@ if __name__ == '__main__':
 
     # TO RUN THE GUI:
     # python beltline_login.py {insert your mysql password here}
-
+    
