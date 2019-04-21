@@ -44,6 +44,22 @@ from PyQt5.QtGui import (
 
 
 
+
+def hash_password(astring):
+    out = 17
+    count = 0
+    for i in astring:
+        if count % 2 == 0:
+            out = out + (61 * ord(i))
+        if count % 3 == 0:
+            out = out + (51 * ord(i))
+        if count % 5 == 0:
+            out = out + (41 * ord(i))
+        out = out + (31 * ord(i))
+    return out
+
+
+
 def check_selected(table_view, table_model, parent, index_list=None):
     selected = len(table_view.selectedIndexes())
     row_index = table_view.currentIndex().row()
@@ -4846,7 +4862,7 @@ class RegisterEmpVisitor(QWidget):
 
             cursor = connection.cursor()
             query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'Employee', " \
-                + f"'{firstname}', '{lastname}', 'Pending', '{hash(password)}');"
+                + f"'{firstname}', '{lastname}', 'Pending', '{hash_password(password)}');"
             cursor.execute(query)
 
             for x in self.email_table.added_emails:
@@ -5016,7 +5032,7 @@ class RegisterEmployee(QWidget):
 
             cursor = connection.cursor()
             query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'Employee'," \
-                + f"'{firstname}', '{lastname}', 'Pending', '{hash(password)}');"
+                + f"'{firstname}', '{lastname}', 'Pending', '{hash_password(password)}');"
             cursor.execute(query)
 
 
@@ -5129,7 +5145,7 @@ class RegisterVisitor(QWidget):
 
             cursor = connection.cursor()
             query = f"insert into user (username, user_type, fname, lname, status, password) values ('{username}', 'Visitor'," \
-                + f"'{firstname}', '{lastname}', 'Pending', '{hash(password)}');"
+                + f"'{firstname}', '{lastname}', 'Pending', '{hash_password(password)}');"
             cursor.execute(query)
 
             for x in self.email_table.added_emails:
@@ -5235,7 +5251,7 @@ class RegisterUser(QWidget):
             query = f"insert into user (username, user_type, fname, " \
                 + "lname, status, password) " \
                 + f"values ('{username}', 'User'," \
-                + f"'{firstname}', '{lastname}', 'Pending', '{hash(password)}');"
+                + f"'{firstname}', '{lastname}', 'Pending', '{hash_password(password)}');"
             cursor.execute(query)
 
             for x in self.email_table.added_emails:
@@ -5385,7 +5401,7 @@ class UserLogin(QWidget):
                 self, 'Error', 'Please fill in both the email and the password fields')
             return
 
-        password = hash(password)
+        password = hash_password(password)
 
         if (email not in login_dict.keys()):
             QMessageBox.warning(
