@@ -40,6 +40,8 @@ from PyQt5.QtGui import (
 #TODO - column sorting?
 #TODO - better email pattern checking
 #TODO - price out of range
+#TODO - email box
+
 
 
 def check_selected(table_view, table_model, parent, index_list=None):
@@ -64,7 +66,7 @@ def valid_email_check(astring, parent):
     email_check = re.fullmatch(email_format, astring)
     if (email_check == None):
         QMessageBox.warning(
-            self.parent, 'Error', 'Please enter a valid email address')
+            parent, 'Error', 'Please enter a valid email address')
         return False
     else:
         return True
@@ -174,6 +176,9 @@ def sqlInsertDeleteQuery(query):
     cursor.execute(query)
     connection.commit()
     cursor.close()
+
+
+
 
 
 
@@ -3401,6 +3406,7 @@ class EmployeeManageProfile(QWidget):
 
             self.table_model = SimpleTableModel(["Email"], self.email_list)
             self.table_view.setModel(self.table_model)
+            #here
 
 
 
@@ -4751,7 +4757,8 @@ class RegisterEmployee(QWidget):
 
 
 
-        self.email_box = EmailBox(self)
+        # self.email_box = EmailBox(self)
+        self.email_table = EmailTable(self)
 
         self.buttonBack = QPushButton('Back', self)
         self.buttonRegister = QPushButton('Register', self)
@@ -4766,8 +4773,8 @@ class RegisterEmployee(QWidget):
 
         self.vbox = QVBoxLayout()
         self.vbox.addWidget(self.form_group_box)
-        self.vbox.addWidget(self.email_box)
-
+        # self.vbox.addWidget(self.email_box)
+        self.vbox.addLayout(self.email_table)
         self.vbox.addWidget(self.form_group_box3)
 
         self.setLayout(self.vbox)
@@ -4798,15 +4805,15 @@ class RegisterEmployee(QWidget):
             or firstname == '' \
             or lastname == '' \
             or confirmpassword == '' \
-            or (len(self.email_box.email_list)) == 0 and self.email_box.email_input.text() == '') \
+            or (len(self.email_table.added_emails) == 0) \
             or user_type == 'Select User Type' \
             or phone == '' \
             or address == '' \
             or city == '' \
             or state == 'Select State' \
-            or zipcode == '':
+            or zipcode == ''):
             QMessageBox.warning(
-                self, 'Error', 'Please fill in all fields')
+                self, 'Error', 'Please fill in all the text fields and provide at least one email address')
         elif (username in username_list):
             QMessageBox.warning(
                 self, 'Error', 'The username provided is already an existing user')
@@ -4830,7 +4837,17 @@ class RegisterEmployee(QWidget):
                 self, 'Error', 'The phone number you provided is already linked to an existing user')
                 return
 
-            for i in self.email_box.email_list:
+            # for i in self.email_box.email_list:
+            #     query_exists = f"select exists (select * from email where email = '{i}')"
+            #     x = sqlQueryOutput(query_exists)
+            #     not_unique_email = list(x[0].values())[0]
+
+            #     if not_unique_email:
+            #         QMessageBox.warning(
+            #         self, 'Error', 'One of the emails you provided is already linked to an existing user')
+            #         return
+
+            for i in self.email_table.added_emails:
                 query_exists = f"select exists (select * from email where email = '{i}')"
                 x = sqlQueryOutput(query_exists)
                 not_unique_email = list(x[0].values())[0]
@@ -4840,16 +4857,20 @@ class RegisterEmployee(QWidget):
                     self, 'Error', 'One of the emails you provided is already linked to an existing user')
                     return
 
-            if (self.email_box.email_input.text() != '' \
-                and self.email_box.email_input.text() != ' ' \
-                and self.email_box.email_input.text() not in self.email_box.email_list):
-                query_exists = f"select exists (select * from email where email = '{self.email_box.email_input.text()}')"
-                x = sqlQueryOutput(query_exists)
-                not_unique_email = list(x[0].values())[0]
-                if not_unique_email:
-                    QMessageBox.warning(
-                    self, 'Error', 'The email you provided in the input box is already linked to an existing user')
-                    return
+
+
+
+
+            # if (self.email_box.email_input.text() != '' \
+            #     and self.email_box.email_input.text() != ' ' \
+            #     and self.email_box.email_input.text() not in self.email_box.email_list):
+            #     query_exists = f"select exists (select * from email where email = '{self.email_box.email_input.text()}')"
+            #     x = sqlQueryOutput(query_exists)
+            #     not_unique_email = list(x[0].values())[0]
+            #     if not_unique_email:
+            #         QMessageBox.warning(
+            #         self, 'Error', 'The email you provided in the input box is already linked to an existing user')
+            #         return
 
 
             cursor = connection.cursor()
@@ -4857,19 +4878,26 @@ class RegisterEmployee(QWidget):
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
             cursor.execute(query)
 
-            for x in self.email_box.email_list:
+
+            for x in self.email_table.added_emails:
 
                 query2 = f"insert into email (username, email) values ('{username}', '{x}');"
                 cursor.execute(query2)
 
-            if (self.email_box.email_input.text() != '' \
-                and self.email_box.email_input.text() != ' ' \
-                and self.email_box.email_input.text() not in self.email_box.email_list):
 
-                query3 = f"insert into email (username, email) values ('{username}', " \
-                    + f"'{self.email_box.email_input.text()}');"
+            # for x in self.email_box.email_list:
 
-                cursor.execute(query3)
+            #     query2 = f"insert into email (username, email) values ('{username}', '{x}');"
+            #     cursor.execute(query2)
+
+            # if (self.email_box.email_input.text() != '' \
+            #     and self.email_box.email_input.text() != ' ' \
+            #     and self.email_box.email_input.text() not in self.email_box.email_list):
+
+            #     query3 = f"insert into email (username, email) values ('{username}', " \
+            #         + f"'{self.email_box.email_input.text()}');"
+
+            #     cursor.execute(query3)
 
             query4 = f"insert into employee (username, phone, address, city, state, zipcode, employee_type)" \
                     + f"values ('{username}', '{phone}', '{address}', '{city}', " \
@@ -4915,7 +4943,8 @@ class RegisterVisitor(QWidget):
         self.form_layout.addRow(QLabel("Confirm Password: "), self.confirmpassword)
         self.form_group_box.setLayout(self.form_layout)
 
-        self.email_box = EmailBox(self)
+        # self.email_box = EmailBox(self)
+        self.email_table = EmailTable(self)
 
         self.buttonBack = QPushButton('Back', self)
         self.buttonRegister = QPushButton('Register', self)
@@ -4930,8 +4959,8 @@ class RegisterVisitor(QWidget):
 
         self.vbox = QVBoxLayout()
         self.vbox.addWidget(self.form_group_box)
-        self.vbox.addWidget(self.email_box)
-
+        # self.vbox.addWidget(self.email_box)
+        self.vbox.addLayout(self.email_table)
         self.vbox.addWidget(self.form_group_box3)
 
         self.setLayout(self.vbox)
@@ -4948,15 +4977,14 @@ class RegisterVisitor(QWidget):
         confirmpassword = self.confirmpassword.text()
 
         username_list = load_db_usernames()
-        email_list = load_db_emails()
+        # email_list = load_db_emails()
 
 
         if (username == '' or password == '' or firstname == '' \
             or lastname == '' or confirmpassword == '' \
-            or (len(self.email_box.email_list)) == 0 \
-            and self.email_box.email_input.text() == ''):
+            or (len(self.email_table.added_emails)) == 0):
             QMessageBox.warning(
-                self, 'Error', 'Please fill in all the text fields')
+                self, 'Error', 'Please fill in all the text fields and provide at least one email address')
         elif (username in username_list):
             QMessageBox.warning(
                 self, 'Error', 'The username provided is already an existing user')
@@ -4965,7 +4993,7 @@ class RegisterVisitor(QWidget):
                 self, 'Error', 'The password and confirm password fields must match exactly')
         else:
 
-            for i in self.email_box.email_list:
+            for i in self.email_table.added_emails:
                 query_exists = f"select exists (select * from email where email = '{i}')"
                 x = sqlQueryOutput(query_exists)
                 not_unique_email = list(x[0].values())[0]
@@ -4975,16 +5003,16 @@ class RegisterVisitor(QWidget):
                     self, 'Error', 'One of the emails you provided is already linked to an existing user')
                     return
 
-            if (self.email_box.email_input.text() != '' \
-                and self.email_box.email_input.text() != ' ' \
-                and self.email_box.email_input.text() not in self.email_box.email_list):
-                query_exists = f"select exists (select * from email where email = '{self.email_box.email_input.text()}')"
-                x = sqlQueryOutput(query_exists)
-                not_unique_email = list(x[0].values())[0]
-                if not_unique_email:
-                    QMessageBox.warning(
-                    self, 'Error', 'The email you provided in the input box is already linked to an existing user')
-                    return
+            # if (self.email_box.email_input.text() != '' \
+            #     and self.email_box.email_input.text() != ' ' \
+            #     and self.email_box.email_input.text() not in self.email_box.email_list):
+            #     query_exists = f"select exists (select * from email where email = '{self.email_box.email_input.text()}')"
+            #     x = sqlQueryOutput(query_exists)
+            #     not_unique_email = list(x[0].values())[0]
+            #     if not_unique_email:
+            #         QMessageBox.warning(
+            #         self, 'Error', 'The email you provided in the input box is already linked to an existing user')
+            #         return
 
 
             cursor = connection.cursor()
@@ -4993,18 +5021,18 @@ class RegisterVisitor(QWidget):
             # print(query)
             cursor.execute(query)
 
-            for x in self.email_box.email_list:
+            for x in self.email_table.added_emails:
 
                 query2 = f"insert into email (username, email) values ('{username}', '{x}');"
                 cursor.execute(query2)
 
-            if (self.email_box.email_input.text() != '' \
-                and self.email_box.email_input.text() != ' ' \
-                and self.email_box.email_input.text() not in self.email_box.email_list):
+            # if (self.email_box.email_input.text() != '' \
+            #     and self.email_box.email_input.text() != ' ' \
+            #     and self.email_box.email_input.text() not in self.email_box.email_list):
 
-                query3 = f"insert into email (username, email) values ('{username}', " \
-                    + f"'{self.email_box.email_input.text()}');"
-                cursor.execute(query3)
+            #     query3 = f"insert into email (username, email) values ('{username}', " \
+            #         + f"'{self.email_box.email_input.text()}');"
+            #     cursor.execute(query3)
 
             query4 = f"insert into visitor_list values ('{username}')"
             cursor.execute(query4)
@@ -5043,7 +5071,7 @@ class RegisterUser(QWidget):
         self.form_layout.addRow(QLabel("Confirm Password: "), self.confirmpassword)
         self.form_group_box.setLayout(self.form_layout)
 
-        self.email_box = EmailBox(self)
+        self.email_table = EmailTable(self)
 
         self.buttonBack = QPushButton('Back', self)
         self.buttonRegister = QPushButton('Register', self)
@@ -5058,10 +5086,8 @@ class RegisterUser(QWidget):
 
         self.vbox = QVBoxLayout()
         self.vbox.addWidget(self.form_group_box)
-        self.vbox.addWidget(self.email_box)
-
+        self.vbox.addLayout(self.email_table)
         self.vbox.addWidget(self.form_group_box3)
-
         self.setLayout(self.vbox)
 
     def handleBack(self):
@@ -5076,15 +5102,12 @@ class RegisterUser(QWidget):
         confirmpassword = self.confirmpassword.text()
 
         username_list = load_db_usernames()
-        email_list = load_db_emails()
-
 
         if (username == '' or password == '' or firstname == '' \
             or lastname == '' or confirmpassword == '' \
-            or (len(self.email_box.email_list)) == 0 \
-            and self.email_box.email_input.text() == ''):
+            or (len(self.email_table.added_emails)) == 0):
             QMessageBox.warning(
-                self, 'Error', 'Please fill in all the text fields')
+                self, 'Error', 'Please fill in all the text fields and provide at least one email address')
         elif (username in username_list):
             QMessageBox.warning(
                 self, 'Error', 'The username provided is already an existing user')
@@ -5093,7 +5116,7 @@ class RegisterUser(QWidget):
                 self, 'Error', 'The password and confirm password fields must match exactly')
         else:
 
-            for i in self.email_box.email_list:
+            for i in self.email_table.added_emails:
                 query_exists = f"select exists (select * from email where email = '{i}')"
                 x = sqlQueryOutput(query_exists)
                 not_unique_email = list(x[0].values())[0]
@@ -5103,17 +5126,6 @@ class RegisterUser(QWidget):
                     self, 'Error', 'One of the emails you provided is already linked to an existing user')
                     return
 
-            if (self.email_box.email_input.text() != '' \
-                and self.email_box.email_input.text() != ' ' \
-                and self.email_box.email_input.text() not in self.email_box.email_list):
-                query_exists = f"select exists (select * from email where email = '{self.email_box.email_input.text()}')"
-                x = sqlQueryOutput(query_exists)
-                not_unique_email = list(x[0].values())[0]
-                if not_unique_email:
-                    QMessageBox.warning(
-                    self, 'Error', 'The email you provided in the input box is already linked to an existing user')
-                    return
-
             cursor = connection.cursor()
             query = f"insert into user (username, user_type, fname, " \
                 + "lname, status, password) " \
@@ -5121,22 +5133,13 @@ class RegisterUser(QWidget):
                 + f"'{firstname}', '{lastname}', 'Pending', '{password}');"
             cursor.execute(query)
 
-            for x in self.email_box.email_list:
+            for x in self.email_table.added_emails:
 
                 query2 = f"insert into email (username, email) values ('{username}', '{x}');"
                 cursor.execute(query2)
 
-            if (self.email_box.email_input.text() != '' \
-                and self.email_box.email_input.text() != ' ' \
-                and self.email_box.email_input.text() not in self.email_box.email_list):
-
-                query3 = f"insert into email values ('{username}', " \
-                    + f"'{self.email_box.email_input.text()}');"
-                cursor.execute(query3)
-
             connection.commit()
             cursor.close()
-            # print("succesful registration")
 
             QMessageBox.information(self, 'Congrats!', "Your registration was a success!", QMessageBox.Ok)
 
@@ -5144,88 +5147,88 @@ class RegisterUser(QWidget):
             self.parent.back()
 
 
-class EmailBox(QGroupBox):
-    def __init__(self, parent, email_count=0):
-        super(EmailBox, self).__init__(parent)
-        self.parent = parent
-        self.email_count = email_count
+# class EmailBox(QGroupBox):
+#     def __init__(self, parent, email_count=0):
+#         super(EmailBox, self).__init__(parent)
+#         self.parent = parent
+#         self.email_count = email_count
 
-        self.vbox = QVBoxLayout()
-        self.hbox1 = QHBoxLayout()
-        self.hbox2 = QHBoxLayout()
+#         self.vbox = QVBoxLayout()
+#         self.hbox1 = QHBoxLayout()
+#         self.hbox2 = QHBoxLayout()
 
-        self.setLayout(self.vbox)
+#         self.setLayout(self.vbox)
 
-        self.vbox.addLayout(self.hbox1)
-        self.vbox.addLayout(self.hbox2)
+#         self.vbox.addLayout(self.hbox1)
+#         self.vbox.addLayout(self.hbox2)
 
-        self.email_list = []
+#         self.email_list = []
 
-        self.added_email_label = QLabel("Added Email(s): ")
-        self.added_emails = QLabel(" ")
-        self.remove_button = QPushButton("Remove Last")
-        self.remove_button.clicked.connect(self.handle_remove_email)
+#         self.added_email_label = QLabel("Added Email(s): ")
+#         self.added_emails = QLabel(" ")
+#         self.remove_button = QPushButton("Remove Last")
+#         self.remove_button.clicked.connect(self.handle_remove_email)
 
-        self.hbox1.addWidget(self.added_email_label)
-        self.hbox1.addWidget(self.added_emails)
-        self.hbox1.addWidget(self.remove_button)
+#         self.hbox1.addWidget(self.added_email_label)
+#         self.hbox1.addWidget(self.added_emails)
+#         self.hbox1.addWidget(self.remove_button)
 
-        self.add_button = QPushButton("Add")
-        self.add_button.clicked.connect(self.handle_add_email)
-        self.email_input = QLineEdit()
-        self.email_label = QLabel("Email: ")
+#         self.add_button = QPushButton("Add")
+#         self.add_button.clicked.connect(self.handle_add_email)
+#         self.email_input = QLineEdit()
+#         self.email_label = QLabel("Email: ")
 
-        self.hbox2.addWidget(self.email_label)
-        self.hbox2.addWidget(self.email_input)
-        self.hbox2.addWidget(self.add_button)
+#         self.hbox2.addWidget(self.email_label)
+#         self.hbox2.addWidget(self.email_input)
+#         self.hbox2.addWidget(self.add_button)
 
-    def handle_add_email(self):
+#     def handle_add_email(self):
 
-        cursor = connection.cursor()
-        query = "select email from email;"
-        cursor.execute(query)
-
-
-        email1 = self.email_input.text()
-        email_format = r'\S+@\S+\.\S+'
-        email_check = re.fullmatch(email_format, email1)
-        if (email1 == ''):
-            QMessageBox.warning(
-                self.parent, 'Error', 'Please fill in the email field')
-        elif email_check == None:
-            QMessageBox.warning(
-                self.parent, 'Error', 'Please enter a valid email address')
-        elif (email1 in self.email_list):
-            QMessageBox.warning(
-                self.parent, 'Error', 'Each email must be unique')
-        else:
-            self.email_list.append(email1)
-            self.email_count += 1
-            count = self.email_count
-            self.parent.hide()
-            if (self.email_count == 1):
-                self.added_emails.setText(f"{email1}")
-            else:
-                self.added_emails.setText(f"{self.added_emails.text()},\n {email1}")
-            self.parent.show()
+#         cursor = connection.cursor()
+#         query = "select email from email;"
+#         cursor.execute(query)
 
 
-    def handle_remove_email(self):
+#         email1 = self.email_input.text()
+#         email_format = r'\S+@\S+\.\S+'
+#         email_check = re.fullmatch(email_format, email1)
+#         if (email1 == ''):
+#             QMessageBox.warning(
+#                 self.parent, 'Error', 'Please fill in the email field')
+#         elif email_check == None:
+#             QMessageBox.warning(
+#                 self.parent, 'Error', 'Please enter a valid email address')
+#         elif (email1 in self.email_list):
+#             QMessageBox.warning(
+#                 self.parent, 'Error', 'Each email must be unique')
+#         else:
+#             self.email_list.append(email1)
+#             self.email_count += 1
+#             count = self.email_count
+#             self.parent.hide()
+#             if (self.email_count == 1):
+#                 self.added_emails.setText(f"{email1}")
+#             else:
+#                 self.added_emails.setText(f"{self.added_emails.text()},\n {email1}")
+#             self.parent.show()
 
 
-        if (self.email_count == 0):
-            QMessageBox.warning(
-                self.parent, 'Error', 'There are no emails to remove')
-        else:
-            x = self.added_emails.text()
-            y = self.email_list[self.email_count - 1]
-            y_len = len(y)
-            x = x[:len(x) - y_len - 2]
-            self.parent.hide()
-            self.added_emails.setText(f'{x}')
-            self.parent.show()
-            self.email_list.pop()
-            self.email_count -= 1
+#     def handle_remove_email(self):
+
+
+#         if (self.email_count == 0):
+#             QMessageBox.warning(
+#                 self.parent, 'Error', 'There are no emails to remove')
+#         else:
+#             x = self.added_emails.text()
+#             y = self.email_list[self.email_count - 1]
+#             y_len = len(y)
+#             x = x[:len(x) - y_len - 2]
+#             self.parent.hide()
+#             self.added_emails.setText(f'{x}')
+#             self.parent.show()
+#             self.email_list.pop()
+#             self.email_count -= 1
 
 
 
@@ -5368,7 +5371,6 @@ class UserLogin(QWidget):
             cursor = connection.cursor()
             query = 'select status from email join user ' \
                 + f"using (username) where email = '{email}';"
-            # print(query)
             cursor.execute(query)
             user_data = [line for line in cursor]
             status = user_data[0]['status']
@@ -5379,8 +5381,6 @@ class UserLogin(QWidget):
                 QMessageBox.warning(
                     self, 'Error', 'Your account registration has been declined approval')
             else:
-                # print("login success")
-                # self.close()
                 self.functionality(email)
 
 
@@ -5394,7 +5394,6 @@ class UserLogin(QWidget):
         cursor = connection.cursor()
         query = 'select username, user_type from email join user ' \
             + f"using (username) where email = '{email}';"
-        # print(query)
         cursor.execute(query)
 
         user_data = [line for line in cursor]
@@ -5402,12 +5401,10 @@ class UserLogin(QWidget):
         user_type = user_data[0]['user_type']
         username = user_data[0]['username']
         if user_type == 'User':
-            # print('user functionality')
             self.hide()
             self.user_func = UserFunctionality(self, username)
             self.user_func.show()
         elif user_type == 'Visitor':
-            # print ('visitor functionality')
             self.hide()
             self.visitor_func = VisitorFunctionality(self, username)
             self.visitor_func.show()
@@ -5462,11 +5459,87 @@ class UserLogin(QWidget):
 
 
 
-# class Window(QMainWindow):
-#     def __init__(self, parent=None):
-#         super(Window, self).__init__(parent)
-        # self.ui = Ui_MainWindow()
-        # self.ui.setupUi(self)
+
+class EmailTable(QVBoxLayout):
+    def __init__(self, parent, email_list=[[""]]):
+        super(EmailTable, self).__init__()
+
+        self.parent = parent
+        self.email_list = email_list
+
+        self.headers = ["Email"]
+
+        self.table_model, self.table_view = createTable(self.headers, self.email_list)
+        self.table_view.setColumnWidth(0, 300)
+        self.addWidget(self.table_view)
+
+        self.delete_selected_btn = QPushButton('Delete Selected Email', self.parent)
+        self.delete_selected_btn.clicked.connect(self.handleDelete)
+        self.addWidget(self.delete_selected_btn)
+
+        self.hbox1 = QHBoxLayout()
+        self.email_label = QLabel("Email: ")
+        self.email = QLineEdit(self.parent)
+        self.add_btn = QPushButton('Add Email', self.parent)
+        self.add_btn.clicked.connect(self.handleAdd)
+        self.hbox1.addWidget(self.email_label)
+        self.hbox1.addWidget(self.email)
+        self.hbox1.addWidget(self.add_btn)
+        self.addLayout(self.hbox1)
+
+
+        self.added_emails = []
+        if email_list != [[""]]:
+            self.added_emails = [i[0] for i in self.email_list]
+        self.deleted_emails = []
+
+    def handleAdd(self):
+        curr_email = self.email.text()
+        if (curr_email == ''):
+            QMessageBox.warning(
+                self.parent, 'Error', 'Please enter an email address to add')
+            return
+        if (valid_email_check(curr_email, self.parent)):
+            query = f"select exists (select * from email where email = '{curr_email}')"
+            x = sqlQueryOutput(query)
+            not_unique = list(x[0].values())[0]
+
+            if (not_unique):
+                QMessageBox.warning(
+                self.parent, 'Error', 'This email address is already linked to an existing user')
+                return
+            if (curr_email in self.added_emails):
+                QMessageBox.warning(
+                self.parent, 'Error', 'You have already added this email address')
+                return
+
+            if len(self.email_list) > 0:
+                if self.email_list[0] == [""]:
+                    self.email_list.remove([""])
+
+            self.added_emails.append(curr_email)
+            self.email_list.append([curr_email])
+
+            self.table_model = SimpleTableModel(["Email"], self.email_list)
+            self.table_view.setModel(self.table_model)
+
+
+
+    def handleDelete(self):
+        selected = len(self.table_view.selectedIndexes())
+        row_index = self.table_view.currentIndex().row()
+        if (not selected):
+            QMessageBox.warning(
+                self.parent, 'Error', 'Please select a row of the table')
+        else:
+            email_to_delete = self.table_model.data[row_index][0]
+            if (email_to_delete in self.added_emails):
+                self.added_emails.remove(email_to_delete)
+            elif ([email_to_delete] in self.original_email_list):
+                self.deleted_emails.append(email_to_delete)
+            self.email_list.remove([email_to_delete])
+            self.table_model = SimpleTableModel(["Email"], self.email_list)
+            self.table_view.setModel(self.table_model)
 
 
 
