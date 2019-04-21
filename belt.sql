@@ -17,6 +17,9 @@ CREATE TABLE user (
 
 
 
+
+
+
 DROP TABLE IF EXISTS email;
 CREATE TABLE email (
     username varchar(20),
@@ -194,7 +197,7 @@ CREATE TABLE event_staff_assignments (
 
 drop function if exists daily_revenue;
 delimiter //
-create function daily_revenue($day varchar(15))
+create function daily_revenue($day varchar(15), $site_name varchar(40))
 returns float
 reads sql data
 begin
@@ -207,7 +210,9 @@ on E.name = VE.event_name
 and E.start_date = VE.start_date
 and E.site_name = VE.site_name
 where VE.visit_date = $day
+and E.site_name = $site_name
 group by E.name, E.start_date, E.site_name) as REV), 0)
 );
 end //
 delimiter ;
+
