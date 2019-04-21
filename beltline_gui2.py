@@ -1055,15 +1055,50 @@ class ManagerDailyDetail(QWidget):
         self.setWindowTitle("Daily Detail")
         self.parent = parent
         self.username = username
-        self.date
+        # self.site_name = site_name
+        self.date = date
+
+        sitequery = f"select name from site where manager_user = '{self.username}'"
+        x = sqlQueryOutput(sitequery, ['name'])
+        self.site_name = x[0][0]
 
         self.vbox = QVBoxLayout()
 
+
+        self.drop_query = "drop temporary table if exists screen30;"
+        self.temp_table_query = "create temporary table screen30 "\
+            +"select distinct VE.event_name, "\
+            +"group_concat(distinct ' ',U.fname, ' ', U.lname order by U.fname) as 'staff_names', "\
+            +"count(VE.username) as 'visits' "\
+            +"from user as U "\
+            +"join event_staff_assignments as ESA "\
+            +"on U.username = ESA.staff_user "\
+            +"join event as E "\
+            +"on E.name = ESA.event_name "\
+            +"and E.site_name = ESA.site_name "\
+            +"and E.start_date = ESA.start_date "\
+            +"join visit_event as VE "\
+            +"on E.name = VE.event_name "\
+            +"and E.start_date = VE.start_date "\
+            +f"where E.site_name = '{self.site_name}' "\
+            +f"and E.start_date<= '{self.date}' and E.end_date>= '{self.date}' "\
+            +"group by VE.event_name;"
+
+
+        self.root_query = "select distinct event_name, visits, staff_names, E.price*visits "\
+            +"as 'revenue' from screen30 join event as E "\
+            +"on E.name = screen30.event_name;"
+
+        cursor = connection.cursor()
+        cursor.execute(self.drop_query)
+        cursor.execute(self.temp_table_query)
+
+        self.table_rows = sqlQueryOutput(self.root_query, ['event_name', 'staff_names', 'visits', 'revenue'])
+
         self.headers = ["Event Name", "Staff Names", 'Visits', 'Revenue']
-        self.table_model, self.table_view = createTable(self.headers, [['', '', '', '']])
-        # self.table_view.setColumnWidth(0, 100)
-        # self.table_view.setColumnWidth(1, 100)
+        self.table_model, self.table_view = createTable(self.headers, self.table_rows)
         self.vbox.addWidget(self.table_view)
+
 
         self.hbox_list1 = []
         hbox_contents1 = [
@@ -1082,6 +1117,8 @@ class ManagerDailyDetail(QWidget):
 
 
 
+
+
 # SCREEN NUMBER 29
 class ManagerSiteReport(QWidget):
     def __init__(self, parent, username):
@@ -1089,11 +1126,16 @@ class ManagerSiteReport(QWidget):
         self.setWindowTitle("Site Report")
         self.parent = parent
         self.username = username
+       
+        sitequery = f"select name from site where manager_user = '{self.username}'"
+        x = sqlQueryOutput(sitequery, ['name'])
+        self.site_name = x[0][0]
 
         self.vbox = QVBoxLayout()
 
         self.hbox_list = []
         hbox_contents = [
+            [('QLabel', [f'Site: {self.site_name}'])],
             [('QLabel', ['Start Date: ']), ('QLineEdit', [])],
             [('QLabel', ['End Date: ']), ('QLineEdit', [])],
             [('QLabel', ['Event Count Range: ']), ('QLineEdit', []), ('QLabel', [' -- ']), ('QLineEdit', [])],
@@ -1109,9 +1151,9 @@ class ManagerSiteReport(QWidget):
 
         self.drop_query = "drop temporary table if exists s29_dates; "
         self.temp_table_query = "create temporary table s29_dates "\
-            + "(select visit_date from visit_event) "\
+            + f"(select visit_date from visit_event where site_name = '{self.site_name}') "\
             + "union "\
-            + "(select visit_date from visit_site); "
+            + f"(select visit_date from visit_site where site_name = '{self.site_name}'); "
         self.drop_func = "drop function if exists daily_revenue; "
         self.delimiter1 = "delimiter // "
         self.revenue_func_query = "create function daily_revenue($day varchar(15)) "\
@@ -1126,7 +1168,7 @@ class ManagerSiteReport(QWidget):
             + "on E.name = VE.event_name "\
             + "and E.start_date = VE.start_date "\
             + "and E.site_name = VE.site_name "\
-            + "where VE.visit_date = $day "\
+            + f"where VE.visit_date = $day and E.site_name = '{self.site_name}' "\
             + "group by E.name, E.start_date, E.site_name) as REV), 0) "\
             + "); "\
             + "end // "
@@ -1137,20 +1179,20 @@ class ManagerSiteReport(QWidget):
             + "select D_OUT.visit_date, "\
             + "(select count(distinct E.name, E.start_date, E.site_name) "\
             + "from event as E where E.start_date <= D_OUT.visit_date "\
-            + "and E.end_date >= D_OUT.visit_date) as 'event_count', "\
+            + f"and E.end_date >= D_OUT.visit_date and E.site_name = '{self.site_name}') as 'event_count', "\
             + "(select count(staff_user) from event as E "\
             + "join event_staff_assignments as ESA "\
             + "on E.name = ESA.event_name "\
             + "and E.site_name = ESA.site_name "\
             + "and E.start_date = ESA.start_date "\
             + "where E.start_date <= D_OUT.visit_date "\
-            + "and E.end_date >= D_OUT.visit_date) as 'staff_count', "\
+            + f"and E.end_date >= D_OUT.visit_date and E.site_name = '{self.site_name}') as 'staff_count', "\
             + "ifnull((select count(username) "\
-            + "from visit_site "\
+            + f"from visit_site where visit_site.site_name = '{self.site_name}' "\
             + "group by visit_date "\
             + "having visit_date = D_OUT.visit_date), 0) "\
             + "+ "\
-            + "ifnull((select count(username) from visit_event "\
+            + f"ifnull((select count(username) from visit_event where visit_event.site_name = '{self.site_name}' "\
             + "group by visit_date "\
             + "having visit_date = D_out.visit_date), 0) "\
             + "as 'total_visits', "\
@@ -1313,8 +1355,19 @@ class ManagerSiteReport(QWidget):
 
 
     def handleDailyDetail(self):
-        pass
-        #TODO
+        selected = len(self.table_view.selectedIndexes())
+        row_index = self.table_view.currentIndex().row()
+        if (not selected):
+            QMessageBox.warning(
+                self, 'Error', 'Please select a row of the table')
+        else:
+            selected_site_name = self.table_rows[row_index][1]
+            select_date = self.table_rows[row_index][0]
+
+            self.hide()
+            self.admin_edit_transit = ManagerDailyDetail(self, self.username, select_date)
+            self.admin_edit_transit.show()
+            self.admin_edit_transit.raise_()
 
     def handleBack(self):
         self.close()
