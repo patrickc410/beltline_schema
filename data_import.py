@@ -12,12 +12,27 @@ try:
 except Exception as e:
     print(e)
 
+
+def hash_password(astring):
+    out = 17
+    count = 0
+    for i in astring:
+        if count % 2 == 0:
+            out = out + (61 * ord(i))
+        if count % 3 == 0:
+            out = out + (51 * ord(i))
+        if count % 5 == 0:
+            out = out + (41 * ord(i))
+        out = out + (31 * ord(i))
+    return out
+
+
 with open('username_data.csv') as un_data:
     reader = csv.reader(un_data)
     username_data = [line for line in reader]
     curs = connection.cursor()
     for i in username_data[1:]:
-        i[1] = hash(i[1])
+        i[1] = hash_password(i[1])
     for item in username_data[1:]:
         query = ("INSERT into user(username,password,status,fname,lname,user_type) VALUES (%s,%s,%s,%s,%s,%s);")
         curs.execute(query,item)
