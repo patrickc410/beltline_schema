@@ -406,7 +406,7 @@ class VisitorSiteDetail(QWidget):
 
 #SCREEN NUMBER 36
 class VisitorTransitDetail(QWidget):
-    def __init__(self, parent, username, site_name):
+     def __init__(self, parent, username, site_name):
         super(VisitorTransitDetail, self).__init__()
         self.setWindowTitle("Visitor Transit Detail")
 
@@ -442,11 +442,15 @@ class VisitorTransitDetail(QWidget):
         self.vbox.addWidget(self.filter_btn)
 
 
-        self.root_query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections "\
-            + "on transit_connections.route = transit.route "\
-            + "and transit_connections.transit_type = transit.type "
+        self.root_query = "select T.route, type, price, count(site_name) as '# Connected Sites' "\
+            + "from transit as T join transit_connections as TC "\
+            + "on TC.route = T.route "\
+            + "and TC.transit_type = T.type "\
+            + "where (T.route, T.type) in "\
+            + "(select route, transit_type from transit_connections "\
+            + f"where site_name = '{self.site_name}') "
 
-        self.group_by = "group by transit.route, transit.type "
+        self.group_by = "group by T.route, T.type "
 
         query = self.root_query + self.group_by
 
@@ -479,9 +483,6 @@ class VisitorTransitDetail(QWidget):
     def handleFilter(self):
 
         transit_type = self.transport_type_dropdown.currentText()
-        # contain_site = self.contain_site_dropdown.currentText()
-        # lower_price_bound = self.lower_price_bound.text()
-        # upper_price_bound = self.upper_price_bound.text()
 
         table_data = []
         cursor = connection.cursor()
@@ -493,10 +494,10 @@ class VisitorTransitDetail(QWidget):
             filterquery = self.root_query + self.group_by
 
         else:
-            filterquery = self.root_query + "where "
+            filterquery = self.root_query + f"and T.type = '{transit_type}' " + self.group_by
 
         # print(query)
-        cursor.execute(query)
+        cursor.execute(filterquery)
         transit_data = [line for line in cursor]
         for i in transit_data:
             table_data.append([i["route"], i["type"], str(i["price"]), i["# Connected Sites"]])
@@ -507,57 +508,6 @@ class VisitorTransitDetail(QWidget):
         self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
 
         self.show()
-
-    def handleBack(self):
-        self.close()
-        self.parent.show()
-
-    def handleLogTransit(self):
-        row_index = self.table_view.currentIndex().row()
-
-        if (row_index == -1):
-            QMessageBox.warning(
-                self, 'Error', 'Please select a row of the table')
-        else:
-
-            transit_date = self.transit_date.text()
-            date_pattern = r'[\d]{4}-[0,1][\d]{1}-[0,1,2,3][\d]{1}'
-            date_check = re.fullmatch(date_pattern, transit_date)
-            route = self.table_model.data[row_index][0]
-            transit_type = self.table_model.data[row_index][1]
-            query_check = "select exists (select username " \
-                + "from take_transit " \
-                + f"where username = '{self.username}' " \
-                + f"and transit_type = '{transit_type}' " \
-                + f"and route = '{route}' " \
-                + f"and take_date = '{transit_date}')"
-            cursor = connection.cursor()
-            cursor.execute(query_check)
-            same_day_check = [line for line in cursor]
-            same_day = list(same_day_check[0].values())[0]
-            # print(same_day)
-            # print(same_day_check)
-
-            cursor.close()
-
-            if (date_check == None):
-                QMessageBox.warning(
-                    self, 'Error', 'Please enter a valid date in the form YYYY-MM-DD')
-            elif (same_day):
-                QMessageBox.warning(
-                    self, 'Error', 'You cannot take the same transit twice in one day')
-            else:
-
-                query = "insert into take_transit " \
-                    + "(username, transit_type, route, take_date) " \
-                    + f"values ('{self.username}', '{transit_type}', '{route}', '{transit_date}');"
-                cursor = connection.cursor()
-                cursor.execute(query)
-                connection.commit()
-                cursor.close()
-                QMessageBox.information(self, 'Congrats!', "You successfully logged your journey!", QMessageBox.Ok)
-
-
 
 
 # SCREEN NUMBER 35
