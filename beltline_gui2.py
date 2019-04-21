@@ -1286,7 +1286,7 @@ class ManagerSiteReport(QWidget):
         self.setWindowTitle("Site Report")
         self.parent = parent
         self.username = username
-       
+
         sitequery = f"select name from site where manager_user = '{self.username}'"
         x = sqlQueryOutput(sitequery, ['name'])
         self.site_name = x[0][0]
@@ -1314,25 +1314,6 @@ class ManagerSiteReport(QWidget):
             + f"(select visit_date from visit_event where site_name = '{self.site_name}') "\
             + "union "\
             + f"(select visit_date from visit_site where site_name = '{self.site_name}'); "
-        self.drop_func = "drop function if exists daily_revenue; "
-        self.delimiter1 = "delimiter // "
-        self.revenue_func_query = "create function daily_revenue($day varchar(15)) "\
-            + "returns float "\
-            + "reads sql data "\
-            + "begin "\
-            + "return ( "\
-            + "ifnull((select distinct sum(REV.revenue) as 'total_revenue' "\
-            + "from (select E.price * count(VE.username) as revenue "\
-            + "from event as E "\
-            + "join visit_event as VE "\
-            + "on E.name = VE.event_name "\
-            + "and E.start_date = VE.start_date "\
-            + "and E.site_name = VE.site_name "\
-            + f"where VE.visit_date = $day and E.site_name = '{self.site_name}' "\
-            + "group by E.name, E.start_date, E.site_name) as REV), 0) "\
-            + "); "\
-            + "end // "
-        self.delimiter2 = "delimiter ; "
 
         self.drop_query2 = "drop temporary table if exists s29;"
         self.temp_table_query2 = "create temporary table s29 "\
@@ -1356,7 +1337,7 @@ class ManagerSiteReport(QWidget):
             + "group by visit_date "\
             + "having visit_date = D_out.visit_date), 0) "\
             + "as 'total_visits', "\
-            + "(select daily_revenue(D_OUT.visit_date)) as 'total_revenue' "\
+            + f"(select daily_revenue(D_OUT.visit_date, '{self.site_name}')) as 'total_revenue' "\
             + "from s29_dates as D_OUT "\
             + "order by D_OUT.visit_date; "
         self.root_query = "select * from s29 "
@@ -5633,4 +5614,4 @@ if __name__ == '__main__':
 
     # TO RUN THE GUI:
     # python beltline_login.py {insert your mysql password here}
-    
+
