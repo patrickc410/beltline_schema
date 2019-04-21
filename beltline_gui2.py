@@ -128,9 +128,7 @@ def createTable(headers, rows, singleSelection=True):
 def createHBox(parent, list_of_tuples):
     hbox = QHBoxLayout()
     hbox_list = []
-    # print(len(list_of_tuples))
     for tup in list_of_tuples:
-        # pprint(tup)
         if (tup[0] == 'QLabel'):
             label = QLabel(tup[1][0])
             hbox.addWidget(label)
@@ -512,7 +510,6 @@ class VisitorTransitDetail(QWidget):
         else:
             filterquery = self.root_query + f"and T.type = '{transit_type}' " + self.group_by
 
-        # print(query)
         cursor.execute(filterquery)
         transit_data = [line for line in cursor]
         for i in transit_data:
@@ -548,8 +545,6 @@ class VisitorTransitDetail(QWidget):
             cursor.execute(query_check)
             same_day_check = [line for line in cursor]
             same_day = list(same_day_check[0].values())[0]
-            # print(same_day)
-            # print(same_day_check)
 
             cursor.close()
 
@@ -1796,7 +1791,7 @@ class ManagerCreateEvent(QWidget):
                 ESA_list = []
 
                 for i in self.table_view.selectedIndexes():
-                    print(self.staff_username_list[i.row()][0])
+                    # print(self.staff_username_list[i.row()][0])
                     username = self.staff_username_list[i.row()][0]
                     ESA_list.append(username)
 
@@ -1824,8 +1819,8 @@ class ManagerCreateEvent(QWidget):
                         self, 'Error', 'One or more of the selected employees are already working during the given start and end dates')
                 else:
                     price, capacity, min_staff_req = float(price), int(capacity), int(min_staff_req)
-                    pprint([event_name, price, capacity, min_staff_req, start_date, end_date, description])
-                    pprint(ESA_list)
+                    # pprint([event_name, price, capacity, min_staff_req, start_date, end_date, description])
+                    # pprint(ESA_list)
 
                     query = "insert into event (name, start_date, site_name, end_date, price, capacity, min_staff_req, description) "\
                         + f"values ('{event_name}', '{start_date}', '{self.site_name}',  "\
@@ -1888,7 +1883,6 @@ class ManagerViewEditEvent(QWidget):
         self.start_date = start_date
         self.site_name = site_name
         self.readOnly = readOnly
-        # print(event_name, start_date, site_name)
 
         query1 = "select name, price, E.start_date, E.end_date, E.min_staff_req, capacity, description "\
             + "from event as E "\
@@ -1962,7 +1956,6 @@ class ManagerViewEditEvent(QWidget):
                 i.append('No')
 
 
-        # pprint(self.staff_name_list)
         self.table_model, self.table_view = createTable(["Name", "Assigned?"], self.staff_name_list, singleSelection=False)
         self.table_view.setColumnWidth(0, 150)
         self.table_view.setColumnWidth(1, 150)
@@ -2493,7 +2486,6 @@ class AdminCreateTransit(QWidget):
             transit_check = [line for line in cursor]
             cursor.close()
             unique_transit = list(transit_check[0].values())[0]
-            # print(unique_transit)
             if (unique_transit):
                 QMessageBox.warning(
                         self, 'Error', 'The transit you are trying to create already exists')
@@ -2615,7 +2607,6 @@ class AdminEditTransit(QWidget):
         for i in range(len(self.connected_sites_checkboxes)):
             if (self.connected_sites_checkboxes[i].checkState()):
                 connections_list.append(self.site_name_list[i])
-        pprint([route, price, connections_list])
 
         if (route == '' or price == ''):
             QMessageBox.warning(
@@ -2655,7 +2646,6 @@ class AdminEditTransit(QWidget):
         for i in connections_list:
             query = "insert into transit_connections (site_name, transit_type, route) "\
                 + f"values ('{i}', '{self.type_d}', '{route}') "
-            print(query)
             sqlInsertDeleteQuery(query)
 
         QMessageBox.information(
@@ -2943,7 +2933,6 @@ class AdminCreateSite(QWidget):
                     self, 'Error', 'There are no available managers')
         else:
             manager = self.manager_username_list[self.manager_dropdown.currentIndex()]
-            # print(self.manager_username_list[self.manager_dropdown.currentIndex()])
 
             cursor = connection.cursor()
             query = "select name from site"
@@ -3968,7 +3957,6 @@ class UserTakeTransit(QWidget):
                     + "group by transit.route, transit.type;"
 
 
-        # print(query)
         cursor.execute(query)
         transit_data = [line for line in cursor]
         for i in transit_data:
@@ -4008,8 +3996,6 @@ class UserTakeTransit(QWidget):
             cursor.execute(query_check)
             same_day_check = [line for line in cursor]
             same_day = list(same_day_check[0].values())[0]
-            # print(same_day)
-            # print(same_day_check)
 
             cursor.close()
 
@@ -5614,7 +5600,7 @@ def load_login_data():
     global login_dict
     login_dict = {}
     for user_dict in user_data:
-        login_dict[user_dict['email']] = user_dict['password']
+        login_dict[user_dict['email']] = int(user_dict['password'])
     return login_dict
 
 
