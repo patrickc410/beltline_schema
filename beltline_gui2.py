@@ -40,7 +40,6 @@ from PyQt5.QtGui import (
 #TODO - column sorting?
 #TODO - better email pattern checking
 #TODO - price out of range
-#TODO - email box for register employee visitor
 
 
 
@@ -1381,16 +1380,16 @@ class ManagerSiteReport(QWidget):
 
 
     def handleFilter(self):
-        start_date = self.hbox_list[0][1][1].text()
-        end_date = self.hbox_list[1][1][1].text()
-        event_count_lower = self.hbox_list[2][1][1].text()
-        event_count_upper = self.hbox_list[2][1][3].text()
-        staff_count_lower = self.hbox_list[3][1][1].text()
-        staff_count_upper = self.hbox_list[3][1][3].text()
-        visits_lower = self.hbox_list[4][1][1].text()
-        visits_upper = self.hbox_list[4][1][3].text()
-        revenue_lower = self.hbox_list[5][1][1].text()
-        revenue_upper = self.hbox_list[5][1][3].text()
+        start_date = self.hbox_list[1][1][1].text()
+        end_date = self.hbox_list[2][1][1].text()
+        event_count_lower = self.hbox_list[3][1][1].text()
+        event_count_upper = self.hbox_list[3][1][3].text()
+        staff_count_lower = self.hbox_list[4][1][1].text()
+        staff_count_upper = self.hbox_list[4][1][3].text()
+        visits_lower = self.hbox_list[5][1][1].text()
+        visits_upper = self.hbox_list[5][1][3].text()
+        revenue_lower = self.hbox_list[6][1][1].text()
+        revenue_upper = self.hbox_list[6][1][3].text()
 
         start_date_filter = (not (start_date == ''))
         end_date_filter = (not (end_date == ''))
@@ -2041,14 +2040,6 @@ class ManagerViewEditEvent(QWidget):
                 + f"where ((E.start_date >= '{self.start_date}' and E.start_date <= '{self.end_date}') " \
                 + f"or (E.end_date >= '{self.start_date}' and E.end_date <= '{self.end_date}'))) " \
                 + "order by EMP.username) "
-
-            x = sqlQueryOutput(query)
-            not_overlap = list(x[0].values())[0]
-
-            if (not not_overlap):
-                QMessageBox.warning(
-                    self, 'Error', 'One or more of the selected employees are already working during the given start and end dates')
-                return
 
         query = f"delete from event_staff_assignments where event_name = '{self.event_name}' "\
             + f"and start_date = '{self.start_date}' and site_name = '{self.site_name}' "
