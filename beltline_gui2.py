@@ -778,7 +778,6 @@ class VisitorExploreSite(QWidget):
             sub_query += f"my_visits = 0 "
             filter_count += 1
 
-        print(sub_query)
         if filter_count:
             query += sub_query
 
