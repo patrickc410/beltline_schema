@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pymysql
 import sys
-from PyQt5.QtCore import Qt, QAbstractTableModel, QVariant
+from PyQt5.QtCore import Qt, QAbstractTableModel, QVariant, QSortFilterProxyModel
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
@@ -115,7 +115,13 @@ def is_int(s):
 def createTable(headers, rows, singleSelection=True):
     table_model = SimpleTableModel(headers, rows)
     table_view = QTableView()
+
+    # proxy_model = QSortFilterProxyModel()
+    # proxy_model.setSourceModel(table_model)
+
     table_view.setModel(table_model)
+    # table_view.setModel(proxy_model)
+    table_view.setSortingEnabled(True)
     if (singleSelection):
         table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
     else:
@@ -772,12 +778,13 @@ class VisitorExploreSite(QWidget):
                 sub_query += f"total_visits <= '{visits_upper}' "
                 filter_count += 1
 
-        if not(include_visited):
+        if (include_visited):
             if filter_count:
                 sub_query += "and "
-            sub_query += f"my_visits = 0 "
+            sub_query += f"my_visits is null "
             filter_count += 1
 
+        print(sub_query)
         if filter_count:
             query += sub_query
 
@@ -3661,19 +3668,23 @@ class EmployeeManageProfile(QWidget):
                     + f"values ('{self.username_d}', '{i}') "
                 sqlInsertDeleteQuery(query)
 
-        s = ''
+        visitor_change = False
         if (visitor_checked and not self.is_visitor):
             query = f"insert into visitor_list (username) values ('{self.username_d}')"
             sqlInsertDeleteQuery(query)
-            s = "Please log out and log back in for your account to reflect changes to your visitor status"
+            visitor_change = True
         elif (not visitor_checked and self.is_visitor):
+
             query = f"delete from visitor_list where username = '{self.username_d}'"
             sqlInsertDeleteQuery(query)
-            s = "Please log out and log back in for your account to reflect changes to your visitor status"
-        QMessageBox.information(self, 'Congrats!', f"You successfully updated your profile! {s}", QMessageBox.Ok)
+            visitor_change = True
+        QMessageBox.information(self, 'Congrats!', f"You successfully updated your profile!", QMessageBox.Ok)
         self.close()
-        self.parent.show()
-
+        if (not visitor_change):
+            self.parent.show()
+        else:
+            self.parent.close()
+            self.parent.parent.functionality(usernamex=self.username_d)
 
 
     def handleAdd(self):
@@ -5505,7 +5516,7 @@ class UserLogin(QWidget):
                 QMessageBox.warning(
                     self, 'Error', 'Your account registration has been declined approval')
             else:
-                self.functionality(email)
+                self.functionality(email=email)
 
 
     def handleRegister(self):
@@ -5513,11 +5524,15 @@ class UserLogin(QWidget):
         self.register_nav = RegisterNavigation(self)
         self.register_nav.show()
 
-    def functionality(self, email):
+    def functionality(self, email=None, usernamex=None):
 
         cursor = connection.cursor()
-        query = 'select username, user_type from email join user ' \
-            + f"using (username) where email = '{email}';"
+        query = ''
+        if email != None:
+            query = 'select username, user_type from email join user ' \
+                + f"using (username) where email = '{email}';"
+        if usernamex != None:
+            query = f"select username, user_type from user where username = '{usernamex}' "
         cursor.execute(query)
 
         user_data = [line for line in cursor]
@@ -5534,31 +5549,27 @@ class UserLogin(QWidget):
             self.visitor_func.show()
         elif user_type == 'Employee':
             cursor = connection.cursor()
-            query2 = 'select employee_type from employee join email' \
-                + f" using (username) where email = '{email}';"
+            query2 = 'select employee_type from employee join user ' \
+                + f" using (username) where username = '{username}';"
             cursor.execute(query2)
             user_data = [line for line in cursor]
             cursor.close()
             emp_type = user_data[0]["employee_type"]
 
             cursor = connection.cursor()
-            query3 = 'select username from visitor_list join email ' \
-                + f" using (username) where email = '{email}';"
-            # print(query3)
+            query3 = 'select username from visitor_list join user ' \
+                + f" using (username) where username = '{username}';"
             cursor.execute(query3)
             user_data = [line for line in cursor]
             cursor.close()
             visitor = len(user_data)
-            # print(visitor)
 
 
             if (emp_type == 'Admin' and not visitor):
-                # print("admin functionality")
                 self.hide()
                 self.admin_func = AdminFunctionality(self, username)
                 self.admin_func.show()
             elif (emp_type == 'Admin' and visitor):
-                # print("admin-visitor functionality")
                 self.hide()
                 self.admin_visitor_func = AdminVisitorFunctionality(self, username)
                 self.admin_visitor_func.show()
