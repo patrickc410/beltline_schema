@@ -809,7 +809,8 @@ class VisitorEventDetail(QWidget):
             x = sqlQueryOutput(query)
             already_visited = list(x[0].values())[0]
 
-            if (not tickets_remaining):
+
+            if (int(tickets_remaining) <= 0):
                 QMessageBox.warning(
                     self, 'Error', 'There are no tickets remaining')
             elif (log_date > end_date or log_date < self.start_date):
@@ -3558,14 +3559,16 @@ class EmployeeManageProfile(QWidget):
                     + f"values ('{self.username_d}', '{i}') "
                 sqlInsertDeleteQuery(query)
 
+        s = ''
         if (visitor_checked and not self.is_visitor):
             query = f"insert into visitor_list (username) values ('{self.username_d}')"
             sqlInsertDeleteQuery(query)
+            s = "Please log out and log back in for your account to reflect changes to your visitor status"
         elif (not visitor_checked and self.is_visitor):
             query = f"delete from visitor_list where username = '{self.username_d}'"
             sqlInsertDeleteQuery(query)
-
-        QMessageBox.information(self, 'Congrats!', "You successfully updated your profile!", QMessageBox.Ok)
+            s = "Please log out and log back in for your account to reflect changes to your visitor status"
+        QMessageBox.information(self, 'Congrats!', f"You successfully updated your profile! {s}", QMessageBox.Ok)
         self.close()
         self.parent.show()
 
