@@ -772,10 +772,10 @@ class VisitorExploreSite(QWidget):
                 sub_query += f"total_visits <= '{visits_upper}' "
                 filter_count += 1
 
-        if (include_visited):
+        if not(include_visited):
             if filter_count:
                 sub_query += "and "
-            sub_query += f"my_visits is null "
+            sub_query += f"my_visits = 0 "
             filter_count += 1
 
         print(sub_query)
