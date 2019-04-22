@@ -5535,11 +5535,11 @@ class UserLogin(QWidget):
 
 
 class EmailTable(QVBoxLayout):
-    def __init__(self, parent, email_list=[[""]]):
+    def __init__(self, parent):
         super(EmailTable, self).__init__()
 
         self.parent = parent
-        self.email_list = email_list
+        self.email_list = [['']]
 
         self.headers = ["Email"]
 
@@ -5563,7 +5563,7 @@ class EmailTable(QVBoxLayout):
 
 
         self.added_emails = []
-        if email_list != [[""]]:
+        if self.email_list != [[""]]:
             self.added_emails = [i[0] for i in self.email_list]
         self.deleted_emails = []
 
