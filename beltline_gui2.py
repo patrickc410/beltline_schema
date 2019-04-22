@@ -3933,25 +3933,22 @@ class UserTakeTransit(QWidget):
         self.hbox3.addWidget(self.dash_label)
         self.hbox3.addWidget(self.upper_price_bound)
 
-
         self.filter_btn = QPushButton('Filter', self)
         self.filter_btn.clicked.connect(self.handleFilter)
-
 
         self.vbox.addLayout(self.hbox1)
         self.vbox.addLayout(self.hbox2)
         self.vbox.addLayout(self.hbox3)
         self.vbox.addWidget(self.filter_btn)
 
-
-        query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections "\
+        self.root_query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections "\
             + "on transit_connections.route = transit.route "\
-            + "and transit_connections.transit_type = transit.type "\
-            + "group by transit.route, transit.type "
+            + "and transit_connections.transit_type = transit.type "
+        self.group_by = "group by transit.route, transit.type "
+        self.curr_query = self.root_query + self.group_by
+        self.table_rows = sqlQueryOutput(self.curr_query, ['route', 'type', 'price', '# Connected Sites'])
 
-        table_rows = sqlQueryOutput(query, ['route', 'type', 'price', '# Connected Sites'])
-
-        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites"], table_rows)
+        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites"], self.table_rows)
         self.table_view = QTableView()
         self.table_view.setModel(self.table_model)
         self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
@@ -3982,98 +3979,30 @@ class UserTakeTransit(QWidget):
         lower_price_bound = self.lower_price_bound.text()
         upper_price_bound = self.upper_price_bound.text()
 
-        table_data = []
-        cursor = connection.cursor()
+        transit_type_filter = (not (transit_type == '--ALL--'))
+        lower_price_bound_filter = (not (lower_price_bound == ''))
+        upper_price_bound_filter = (not (upper_price_bound == ''))
 
-        transit_type_filter = True
-        lower_price_bound_filter = True
-        upper_price_bound_filter = True
-        query = ''
+        query = self.root_query \
+            + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
 
-        if (transit_type == '--ALL--'):
-            transit_type_filter = False
-
-        if (lower_price_bound == ''):
-            lower_price_bound_filter = False
-
-        if (upper_price_bound == ''):
-            upper_price_bound_filter = False
-
-        if (not lower_price_bound_filter and not upper_price_bound_filter):
-            if (not transit_type_filter):
-                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
-                    + "where transit_connections.route = transit.route " \
-                    + "and transit_connections.transit_type = transit.type " \
-                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
-                    + "group by transit.route, transit.type;"
+        if (lower_price_bound_filter):
+            if not is_float(lower_price_bound):
+                return
             else:
-                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
-                    + "where transit_connections.route = transit.route " \
-                    + "and transit_connections.transit_type = transit.type " \
-                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
-                    + f"and type = '{transit_type}' " \
-                    + "group by transit.route, transit.type;"
-        elif (lower_price_bound_filter):
-            if (not transit_type_filter):
-                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
-                    + "where transit_connections.route = transit.route " \
-                    + "and transit_connections.transit_type = transit.type " \
-                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
-                    + f"and price > {float(lower_price_bound)} " \
-                    + "group by transit.route, transit.type;"
+                query += f"and price >= {float(lower_price_bound)} "
+        if (upper_price_bound_filter):
+            if not is_float(upper_price_bound):
+                return
             else:
-                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
-                    + "where transit_connections.route = transit.route " \
-                    + "and transit_connections.transit_type = transit.type " \
-                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
-                    + f"and type = '{transit_type}' " \
-                    + f"and price > {float(lower_price_bound)} " \
-                    + "group by transit.route, transit.type;"
-        elif (upper_price_bound_filter):
-            if (not transit_type_filter):
-                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
-                    + "where transit_connections.route = transit.route " \
-                    + "and transit_connections.transit_type = transit.type " \
-                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
-                    + f"and price < {float(upper_price_bound)} " \
-                    + "group by transit.route, transit.type;"
-            else:
-                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
-                    + "where transit_connections.route = transit.route " \
-                    + "and transit_connections.transit_type = transit.type " \
-                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
-                    + f"and type = '{transit_type}' " \
-                    + f"and price < {float(upper_price_bound)} " \
-                    + "group by transit.route, transit.type;"
-        else:
-            if (not transit_type_filter):
-                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
-                    + "where transit_connections.route = transit.route " \
-                    + "and transit_connections.transit_type = transit.type " \
-                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
-                    + f"and price between {float(lower_price_bound)} and {float(upper_price_bound)} " \
-                    + "group by transit.route, transit.type;"
-            else:
-                query = "select transit.route, type, price, count(site_name) as '# Connected Sites' from transit join transit_connections " \
-                    + "where transit_connections.route = transit.route " \
-                    + "and transit_connections.transit_type = transit.type " \
-                    + f"and (transit.route, type) in (select route, transit_type from transit_connections where site_name = '{contain_site}') " \
-                    + f"and type = '{transit_type}' " \
-                    + f"and price between {float(lower_price_bound)} and {float(upper_price_bound)} " \
-                    + "group by transit.route, transit.type;"
+                query += f"and price <= {float(upper_price_bound)} "
+        if (transit_type_filter):
+            query += f"and type = '{transit_type}' "
 
+        query += self.group_by
 
-        cursor.execute(query)
-        transit_data = [line for line in cursor]
-        for i in transit_data:
-            table_data.append([i["route"], i["type"], str(i["price"]), i["# Connected Sites"]])
+        self.handleUpdateTable(query)
 
-        self.hide()
-        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites"], table_data)
-        self.table_view.setModel(self.table_model)
-        self.table_view.setSelectionMode(QAbstractItemView.SelectRows | QAbstractItemView.SingleSelection)
-
-        self.show()
 
     def handleBack(self):
         self.close()
@@ -4121,6 +4050,16 @@ class UserTakeTransit(QWidget):
                 connection.commit()
                 cursor.close()
                 QMessageBox.information(self, 'Congrats!', "You successfully logged your journey!", QMessageBox.Ok)
+
+
+    def handleUpdateTable(self, query=None):
+        if query == None:
+            query = self.root_query + self.group_by
+
+        self.table_rows = sqlQueryOutput(query, ['route', 'type', 'price', '# Connected Sites'])
+        self.table_model = SimpleTableModel(["Route", "Transport Type", "Price", "# Connected Sites"], self.table_rows)
+        self.table_view.setModel(self.table_model)
+
 
 
 
