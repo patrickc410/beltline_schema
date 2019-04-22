@@ -582,10 +582,9 @@ class VisitorExploreSite(QWidget):
         site_name_list.insert(0, '--ALL--')
         self.hbox_list = []
         hbox_contents = [
-            [('QLabel', ['Name: ']), ('QComboBox', [site_name_list])],
+            [('QLabel', ['Site Name: ']), ('QComboBox', [site_name_list])],
             [('QLabel', ['Open Every Day: ']), ('QComboBox', [['--ALL--', 'Yes', 'No']])],
-            [('QLabel', ['Start Date: ']), ('QLineEdit', [])],
-            [('QLabel', ['End Date: ']), ('QLineEdit', [])],
+            [('QLabel', ['Start Date: ']), ('QLineEdit', []), ('QLabel', ['End Date: ']), ('QLineEdit', [])],
             [('QLabel', ['Total Visits Range: ']), ('QLineEdit', []), ('QLabel', [' -- ']), ('QLineEdit', [])],
             [('QLabel', ['Event Count Range: ']), ('QLineEdit', []), ('QLabel', [' -- ']), ('QLineEdit', [])],
             ]
@@ -594,6 +593,7 @@ class VisitorExploreSite(QWidget):
             (x, y) = createHBox(self, i)
             self.vbox.addLayout(x)
             self.hbox_list.append((x,y))
+
 
         self.cb_include_visited = QCheckBox("Include Visited?", self)
         self.cb_include_visited.setChecked(True)
@@ -609,51 +609,53 @@ class VisitorExploreSite(QWidget):
             self.vbox.addLayout(x)
             self.hbox_list1.append((x,y))
 
+
         self.drop_query = 'drop temporary table if exists temp35;'
         self.temp_table_query = 'create temporary table temp35 '\
-                        +"select E.site_name, "\
-                        +"count(distinct E.name,E.start_date) as 'event_counts', "\
-                        +"(select count(*) as 'total visits' "\
-                        +"from site as S "\
-                        +"join event as E "\
-                        +"on S.name = E.site_name "\
-                        +"left outer join visit_site as VS "\
-                        +"on S.name = VS.site_name "\
-                        +"group by S.name "\
-                        +"having S.name = E.site_name "\
-                        +"order by S.name) "\
-                        +"+ "\
-                        +"(select count(*) from visit_event "\
-                        +"group by site_name "\
-                        +"having site_name = E.site_name "\
-                        +"order by site_name) "\
-                        +"as 'total_visits', "\
-                        +"(select count(*) as 'my visits' "\
-                        +"from site as S "\
-                        +"join event as E "\
-                        +"on S.name = E.site_name "\
-                        +"left outer join visit_site as VS "\
-                        +"on S.name = VS.site_name "\
-                        +f"where VS.username = '{self.username}' "\
-                        +"group by S.name "\
-                        +"having S.name = E.site_name "\
-                        +"order by S.name) "\
-                        +"+ "\
-                        +"(select count(*) from visit_event "\
-                        +f"where visit_event.username = '{self.username}' "\
-                        +"group by site_name "\
-                        +"having site_name = E.site_name "\
-                        +"order by site_name) "\
-                        +"as 'my_visits' "\
-                        +"from event as E join visit_event as VE "\
-                        +"on E.name = VE.event_name and E.start_date = VE.start_date "\
-                        + "group by E.site_name;"
+                + "select S_OUT.name as 'site_name', "\
+                + "count(distinct E_OUT.name,E_OUT.start_date) as 'event_counts', "\
+                + "(select count(*) as 'total_visits' "\
+                + "from site as S "\
+                + "join event as E "\
+                + "on S.name = E.site_name "\
+                + "left outer join visit_site as VS "\
+                + "on S.name = VS.site_name "\
+                + "group by S.name "\
+                + "having S.name = S_OUT.name "\
+                + "order by S.name) "\
+                + "+ "\
+                + "(select count(*) from visit_event "\
+                + "group by site_name "\
+                + "having site_name = S_OUT.name "\
+                + "order by site_name) "\
+                + "as 'total_visits', "\
+                + "(select count(*) "\
+                + "from site as S "\
+                + "join event as E "\
+                + "on S.name = E.site_name "\
+                + "left outer join visit_site as VS "\
+                + "on S.name = VS.site_name "\
+                + f"where VS.username = '{self.username}' "\
+                + "group by S.name "\
+                + "having S.name = S_OUT.name "\
+                + "order by S.name) "\
+                + "+ "\
+                + "(select count(*) from visit_event "\
+                + f"where visit_event.username = '{self.username}' "\
+                + "group by site_name "\
+                + "having site_name = S_OUT.name "\
+                + "order by site_name) "\
+                + "as 'my_visits', S_OUT.openeveryday "\
+                + "from site as S_OUT "\
+                + "join event as E_OUT "\
+                + "on E_OUT.site_name = S_OUT.name "\
+                + "group by S_OUT.name; "
 
 
         sqlInsertDeleteQuery(self.drop_query)
         sqlInsertDeleteQuery(self.temp_table_query)
 
-        self.root_query = "select * from temp35 "
+        self.root_query = "select distinct t35.site_name,t35.event_counts,t35.total_visits,t35.my_visits from temp35 as t35 "
         self.curr_query = self.root_query
 
         self.table_rows = sqlQueryOutput(self.root_query, ['site_name', 'event_counts', 'total_visits', 'my_visits'])
@@ -678,7 +680,110 @@ class VisitorExploreSite(QWidget):
 
 
     def handleFilter(self):
-        pass
+        site_name = self.hbox_list[0][1][1].currentText()
+        openeveryday = self.hbox_list[1][1][1].currentText()
+        start_date = self.hbox_list[2][1][1].text()
+        end_date = self.hbox_list[2][1][3].text()
+        visits_lower = self.hbox_list[3][1][1].text()
+        visits_upper = self.hbox_list[3][1][3].text()
+        event_count_lower = self.hbox_list[4][1][1].text()
+        event_count_upper = self.hbox_list[4][1][3].text()
+        include_visited = self.cb_include_visited.checkState()
+
+
+        site_name_filter = (not (site_name == '--ALL--'))
+        openeveryday_filter = (not (openeveryday == '--ALL--'))
+        start_date_filter = (not (start_date == ''))
+        end_date_filter = (not (end_date == ''))
+        visits_lower_filter = (not (visits_lower == ''))
+        visits_upper_filter = (not (visits_upper == ''))
+        event_lower_filter = (not (event_count_lower == ''))
+        event_upper_filter = (not (event_count_upper == ''))
+
+
+        query = self.root_query
+        sub_query = "where "
+        filter_count = 0
+        date_filter_count = 0
+
+        if (start_date_filter):
+            if not valid_date_check(start_date, self):
+                return
+            else:
+                query += "join event on t35.site_name = event.site_name "
+                date_filter_count += 1
+                sub_query += f"event.start_date >= '{start_date}' "
+                filter_count += 1
+        if (end_date_filter):
+            if not valid_date_check(end_date, self):
+                return
+            else:
+                if not(date_filter_count):
+                    query += "join event on t35.site_name = event.site_name "
+                if date_filter_count:
+                    sub_query += 'and '
+                sub_query += f"event.start_date <= '{end_date}' "
+                date_filter_count += 1
+                filter_count += 1
+        if (site_name_filter):
+            if filter_count:
+                sub_query += "and "
+            sub_query += f"t35.site_name = '{site_name}'"
+            filter_count += 1
+        if (openeveryday_filter):
+            if filter_count:
+                sub_query += "and "
+            sub_query += f"t35.openeveryday = '{openeveryday}'"
+            filter_count += 1
+        if (event_lower_filter):
+            if not is_float(event_count_lower):
+                QMessageBox.warning(self, 'Error', 'The event count bounds must be valid numbers')
+                return
+            else:
+                if filter_count:
+                    sub_query += "and "
+                sub_query += f"event_counts >= '{event_count_lower}' "
+                filter_count += 1
+        if (event_upper_filter):
+            if not is_float(event_count_upper):
+                QMessageBox.warning(self, 'Error', 'The event count bounds must be valid numbers')
+                return
+            else:
+                if filter_count:
+                    sub_query += "and "
+                sub_query += f"event_counts <= {event_count_upper} "
+                filter_count += 1
+
+        if (visits_lower_filter):
+            if not is_float(visits_lower):
+                QMessageBox.warning(self, 'Error', 'The visit count bounds must be valid numbers')
+                return
+            else:
+                if filter_count:
+                    sub_query += "and "
+                sub_query += f"total_visits >= {visits_lower} "
+                filter_count += 1
+        if (visits_upper_filter):
+            if not is_float(visits_upper):
+                QMessageBox.warning(self, 'Error', 'The visit count bounds must be valid numbers')
+                return
+            else:
+                if filter_count:
+                    sub_query += "and "
+                sub_query += f"total_visits <= '{visits_upper}' "
+                filter_count += 1
+
+        if (include_visited):
+            if filter_count:
+                sub_query += "and "
+            sub_query += f"my_visits is null "
+            filter_count += 1
+
+        print(sub_query)
+        if filter_count:
+            query += sub_query
+
+        self.handleUpdateTable(query)
 
     def handleSiteDetail(self):
         selected = len(self.table_view.selectedIndexes())
