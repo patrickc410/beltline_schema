@@ -629,7 +629,7 @@ class VisitorExploreSite(QWidget):
                 + "having site_name = S_OUT.name "\
                 + "order by site_name) "\
                 + "as 'total_visits', "\
-                + "(select count(*) "\
+                + "ifnull((select count(*) "\
                 + "from site as S "\
                 + "join event as E "\
                 + "on S.name = E.site_name "\
@@ -638,19 +638,18 @@ class VisitorExploreSite(QWidget):
                 + f"where VS.username = '{self.username}' "\
                 + "group by S.name "\
                 + "having S.name = S_OUT.name "\
-                + "order by S.name) "\
+                + "order by S.name), 0) "\
                 + "+ "\
-                + "(select count(*) from visit_event "\
+                + "ifnull((select count(*) from visit_event "\
                 + f"where visit_event.username = '{self.username}' "\
                 + "group by site_name "\
                 + "having site_name = S_OUT.name "\
-                + "order by site_name) "\
+                + "order by site_name), 0) "\
                 + "as 'my_visits', S_OUT.openeveryday "\
                 + "from site as S_OUT "\
                 + "join event as E_OUT "\
                 + "on E_OUT.site_name = S_OUT.name "\
                 + "group by S_OUT.name; "
-
 
         sqlInsertDeleteQuery(self.drop_query)
         sqlInsertDeleteQuery(self.temp_table_query)
@@ -3543,7 +3542,6 @@ class EmployeeManageProfile(QWidget):
             self.email_list.append([i["email"]])
         self.original_email_list = self.email_list
         cursor.close()
-        # self.email_count = len(self.email_list)
 
         self.vbox = QVBoxLayout()
 
@@ -3704,7 +3702,6 @@ class EmployeeManageProfile(QWidget):
 
             self.table_model = SimpleTableModel(["Email"], self.email_list)
             self.table_view.setModel(self.table_model)
-            #here
 
 
 
@@ -5715,4 +5712,3 @@ if __name__ == '__main__':
 
     # TO RUN THE GUI:
     # python beltline_login.py {insert your mysql password here}
-
