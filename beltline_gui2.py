@@ -38,9 +38,6 @@ from PyQt5.QtGui import (
 
 
 #TODO - column sorting?
-#TODO - better email pattern checking
-#TODO - price out of range
-
 
 
 
@@ -77,7 +74,7 @@ def check_selected(table_view, table_model, parent, index_list=None):
 
 
 def valid_email_check(astring, parent):
-    email_format = r'\S+@\S+\.\S+'
+    email_format = r'[^@]+@[^@]+\.[^@]+'
     email_check = re.fullmatch(email_format, astring)
     if (email_check == None):
         QMessageBox.warning(
