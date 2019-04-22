@@ -3627,6 +3627,10 @@ class EmployeeManageProfile(QWidget):
         fname = self.firstname.text()
         lname = self.lastname.text()
 
+        if (fname == '' or lname == '' or phone == ''):
+            QMessageBox.warning(
+                self, 'Error', 'Please fill in all fields')
+            return
         if (len(self.email_list) == 0):
             QMessageBox.warning(
                 self, 'Error', 'You must have at least one email address linked to your account')
