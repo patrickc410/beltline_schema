@@ -135,7 +135,7 @@ CREATE TABLE visit_site (
     visit_date date NOT NULL,
     PRIMARY KEY (username, site_name, visit_date),
     CONSTRAINT visit_site_fk1 FOREIGN KEY (username)
-        REFERENCES user (username)
+        REFERENCES visitor_list (username)
         ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT visit_site_fk2 FOREIGN KEY (site_name)
         REFERENCES site (name)
@@ -153,7 +153,7 @@ CREATE TABLE visit_event (
     visit_date date NOT NULL,
     PRIMARY KEY (username, event_name, start_date, site_name, visit_date),
     CONSTRAINT visit_event_fk1 FOREIGN KEY (username)
-        REFERENCES user (username)
+        REFERENCES visitor_list (username)
         ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT visit_event_fk2 FOREIGN KEY (event_name, start_date, site_name)
         REFERENCES event (name, start_date, site_name)
