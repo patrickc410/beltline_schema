@@ -3071,6 +3071,7 @@ class AdminCreateSite(QWidget):
                 QMessageBox.information(
                     self, 'Success', "You successfully created a new site!", QMessageBox.Ok)
                 self.close()
+                self.parent.handleUpdateTable()
                 self.parent.show()
 
 
